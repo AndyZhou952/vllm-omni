@@ -4,11 +4,13 @@
 
 import pprint
 from dataclasses import asdict, dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import PIL.Image
 import torch
 
+if TYPE_CHECKING:
+    from vllm.lora.request import LoRARequest
 
 @dataclass
 class OmniDiffusionRequest:
@@ -26,6 +28,8 @@ class OmniDiffusionRequest:
     # data_type: DataType
 
     request_id: str | None = None
+
+    lora_request: "LoRARequest" | None = None
 
     generator: torch.Generator | list[torch.Generator] | None = None
 

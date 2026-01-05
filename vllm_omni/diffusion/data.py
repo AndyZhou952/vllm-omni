@@ -15,6 +15,7 @@ from pydantic import model_validator
 from typing_extensions import Self
 from vllm.config.utils import config
 from vllm.logger import init_logger
+from vllm.config.lora import MaxLoRARanks
 
 from vllm_omni.diffusion.utils.network_utils import is_port_available
 
@@ -285,6 +286,11 @@ class OmniDiffusionConfig:
     # Will adapt only q, k, v, o by default.
     lora_target_modules: list[str] | None = None
 
+    # Dynamic LoRA support
+    enable_lora: bool = False
+    max_loras: int = 1
+    max_lora_rank: MaxLoRARanks = 16
+
     output_type: str = "pil"
 
     # CPU offload parameters
@@ -393,6 +399,8 @@ class OmniDiffusionConfig:
 
     def __post_init__(self):
         # TODO: remove hard code
+        # TODO - andy: VLLM_ALLOW_RUNTIME_LORA_UPDATING?
+        # ref: https://docs.vllm.ai/en/stable/features/lora/#serving-lora-adapters
         initial_master_port = (self.master_port or 30005) + random.randint(0, 100)
         self.master_port = self.settle_port(initial_master_port, 37)
 

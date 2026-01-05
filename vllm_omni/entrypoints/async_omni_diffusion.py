@@ -17,6 +17,7 @@ from typing import Any
 
 from PIL import Image
 from vllm.logger import init_logger
+from vllm.lora.request import LoRARequest
 from vllm.transformers_utils.config import get_hf_file_to_dict
 
 from vllm_omni.diffusion.data import OmniDiffusionConfig, TransformerConfig
@@ -276,3 +277,47 @@ class AsyncOmniDiffusion:
     def is_stopped(self) -> bool:
         """Check if the engine is stopped."""
         return self._closed
+
+    async def add_lora(self, lora_request: LoRARequest) -> bool:
+        """
+        Load a new LoRA adapter into the engine for future requests.
+        """
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(
+            self._executor,
+            self.engine.add_lora,
+            lora_request,
+        )
+
+    async def remove_lora(self, lora_id: int) -> bool:
+        """
+        Remove a LoRA adapter from the engine.
+        """
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(
+            self._executor,
+            self.engine.remove_lora,
+            lora_id,
+        )
+
+    async def list_loras(self) -> list[dict[str, Any]]:
+        """
+        List all loaded LoRA adapters
+        """
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(
+            self._executor,
+            self.engine.list_loras,
+        )
+
+    async def update_lora_weights(self, lora_id: int, weights: dict[str, Any]) -> bool:
+        """
+        Update weights for a LoRA adapter
+        """
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(
+            self._executor,
+            self.engine.update_lora_weights,
+            lora_id,
+            weights,
+        )

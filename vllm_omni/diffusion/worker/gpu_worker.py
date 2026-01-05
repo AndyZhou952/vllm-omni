@@ -11,6 +11,8 @@ from vllm.distributed.device_communicators.shm_broadcast import MessageQueue
 from vllm.logger import init_logger
 from vllm.utils.mem_utils import DeviceMemoryProfiler, GiB_bytes
 
+from typing import Any
+
 from vllm_omni.diffusion.cache.selector import get_cache_backend
 from vllm_omni.diffusion.data import (
     DiffusionOutput,
@@ -23,6 +25,7 @@ from vllm_omni.diffusion.distributed.parallel_state import (
     initialize_model_parallel,
 )
 from vllm_omni.diffusion.forward_context import set_forward_context
+from vllm_omni.diffusion.lora.manager import DiffusionLoRAManager
 from vllm_omni.diffusion.model_loader.diffusers_loader import DiffusersPipelineLoader
 from vllm_omni.diffusion.request import OmniDiffusionRequest
 
@@ -107,6 +110,19 @@ class GPUWorker:
         if self.cache_backend is not None:
             self.cache_backend.enable(self.pipeline)
 
+        self.lora_manager: DiffusionLoRAManager | None = None
+        if self.od_config.enable_lora:
+            try:
+                self.lora_manager = DiffusionLoRAManager(
+                    max_loras=self.od_config.max_loras,
+                    max_lora_rank=self.od_config.max_lora_rank,
+                    pipeline=self.pipeline,
+                )
+                logger.info(f"Worker {self.rank}: LoRA manager initialized")
+            except Exception as e:
+                logger.error(f"Worker {self.rank}: Failed to initialize LoRA manager: {e}")
+                raise
+
     def generate(self, requests: list[OmniDiffusionRequest]) -> DiffusionOutput:
         """
         Generate output for the given requests.
@@ -133,12 +149,89 @@ class GPUWorker:
         if req.generator is None and req.seed is not None:
             req.generator = torch.Generator(device=self.device).manual_seed(req.seed)
 
+        if self.lora_manager is not None and req.lora_request is not None:
+            lora_requests = [req.lora_request]
+            result = self.lora_manager._apply_adapters(lora_requests)
+            if result.get("status") != "success": # ref: lora/manager.py
+                logger.warning(f"Failed to apply LoRA adapters: {result.get("error")}")
+
         # Refresh cache context if needed
         if self.cache_backend is not None and self.cache_backend.is_enabled():
             self.cache_backend.refresh(self.pipeline, req.num_inference_steps)
         with set_forward_context(vllm_config=self.vllm_config, omni_diffusion_config=self.od_config):
             output = self.pipeline.forward(req)
         return output
+
+    def add_lora_adapter(self, lora_request_dict: dict) -> dict[str, Any]:
+        """
+        RPC method: load a LoRA adapter
+        """
+        if self.lora_manager is None:
+            return {"status": "error", "error": "LoRA support is not enabled"}
+
+        try:
+            from vllm.lora.request import LoRARequest
+
+            lora_request = LoRARequest(
+                lora_name = lora_request_dict["lora_name"],
+                lora_int_id = lora_request_dict["lora_int_id"],
+                lora_local_path = lora_request_dict["lora_local_path"],
+            )
+            return self.lora_manager.add_adapter(lora_request)
+        except Exception as e:
+            logger.error(f"Error adding LoRA adapter: {e}")
+            return {"status": "error", "error": str(e)}
+
+    def remove_lora_adapter(self, lora_id: int) -> dict[str, Any]:
+        """
+        RPC method: remove a LoRA adapter
+        """
+        if self.lora_manager is None:
+            return {"status": "error", "error": "LoRA support is not enabled"}
+
+        try:
+            return self.lora_manager.remove_adapter(lora_id)
+        except Exception as e:
+            logger.error(f"Error removing LoRA adapter: {e}", exc_info=True)
+            return {"status": "error", "error": str(e)}
+
+    def list_lora_adapters(self) -> dict[str, Any]:
+        """
+        RPC method: list all loaded LoRA adapters
+        """
+        if self.lora_manager is None:
+            return {"status": "error", "error": "LoRA support is not enabled"}
+
+        try:
+            adapters = self.lora_manager.list_adapters()
+            return {"status": "success", "adapters": adapters}
+        except Exception as e:
+            logger.error(f"Error listing LoRA adapters: {e}")
+            return {"status": "error", "error": str(e)}
+
+    def update_lora_weights(self, lora_id: int, weights: dict[str, Any]) -> dict[str, Any]:
+        """
+        RPC method: update weights of a LoRA adapter
+        """
+        if self.lora_manager is None:
+            return {"status": "error", "error": "LoRA support is not enabled"}
+
+        try:
+            # TODO - andy: check tensor conversion?
+            weight_tensors = {}
+            for param_name, weight_data in weights.items():
+                if isinstance(weight_data, dict):
+                    weight_tensors[param_name] = torch.tensor(
+                        weight_data['data'], dtype=getattr(torch, weight_data['dtype'])
+                    ).reshape(weight_data['shape'])
+                elif isinstance(weight_data, torch.Tensor):
+                    weight_tensors[param_name] = weight_data
+                else:
+                    weight_tensors[param_name] = torch.tensor(weight_data)
+            return self.lora_manager.update_weights(lora_id, weight_tensors)
+        except Exception as e:
+            logger.error(f"Error updating LoRA weights: {e}")
+            return {"status": "error", "error": str(e)}
 
     def shutdown(self) -> None:
         destroy_distributed_env()
@@ -227,6 +320,7 @@ class WorkerProc:
             return {"status": "error", "error": str(e)}, should_reply
 
     # TODO: queueing, cancellation
+    # TODO - andy: lora update?
     def worker_busy_loop(self) -> None:
         """Main busy loop for Multiprocessing Workers"""
 

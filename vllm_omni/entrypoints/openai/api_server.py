@@ -31,6 +31,7 @@ from vllm.entrypoints.openai.api_server import (
 from vllm.entrypoints.openai.protocol import ChatCompletionRequest, ChatCompletionResponse, ErrorResponse
 from vllm.entrypoints.openai.serving_models import BaseModelPath, LoRAModulePath, OpenAIServingModels
 from vllm.entrypoints.openai.tool_parsers import ToolParserManager
+from vllm.lora.request import LoRARequest # TODO - andy: add lora related methods
 
 # yapf conflicts with isort for this block
 # yapf: disable

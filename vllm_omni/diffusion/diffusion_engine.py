@@ -8,7 +8,9 @@ from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from typing import Any
 
+import torch # TODO - andy: npu?
 from vllm.logger import init_logger
+from vllm.lora.request import LoRARequest
 
 from vllm_omni.diffusion.data import SHUTDOWN_MESSAGE, OmniDiffusionConfig
 from vllm_omni.diffusion.registry import get_diffusion_post_process_func, get_diffusion_pre_process_func
@@ -297,6 +299,7 @@ class DiffusionEngine:
 
         deadline = None if timeout is None else time.monotonic() + timeout
         kwargs = kwargs or {}
+        exec_all_ranks = kwargs.pop("exec_all_ranks", False)
 
         assert isinstance(method, str)
         send_method = method
@@ -308,6 +311,7 @@ class DiffusionEngine:
             "args": args,
             "kwargs": kwargs,
             "output_rank": unique_reply_rank,
+            "exec_all_ranks": exec_all_ranks,
         }
 
         try:
@@ -358,6 +362,132 @@ class DiffusionEngine:
         )
         logger.info("dummy run to warm up the model")
         self.add_req_and_wait_for_response([req])
+
+    def add_lora(self, lora_request: LoRARequest) -> bool:
+        """
+        Load a LoRA adapter on all workers
+        """
+        if not self.od_config.enable_lora:
+            logger.warning("LoRA support is not enabled. Set enable_lora=True in config.")
+            return False
+        try:
+            # serialization
+            lore_request_dict = {
+                "lora_name": lora_request.lora_name,
+                "lora_int_id": lora_request.lora_int_id,
+                "lora_local_path": lora_request.lora_local_path,
+            }
+
+            result = self.collective_rpc(
+                method="add_lora_adapter",
+                args=(lore_request_dict,),
+                unique_reply_rank=0,
+                kwargs={"exec_all_ranks": True},
+            )
+
+            if isinstance(result, dict):
+                status = result.get("status")
+                if status == "success":
+                    logger.info(f"Successfully loaded LoRA adapter {lora_request.lora_name}")
+                    return True
+                else:
+                    error = result.get("error", "Unknown error")
+                    logger.error(f"Failed to load LoRA adapter: {error}")
+                    return False
+            return False
+        except Exception as e:
+            logger.error(f"Error adding LoRA adapter: {e}")
+            return False
+
+    def remove_lora(self, lora_id: int) -> bool:
+        """
+        Remove a LoRA adapter from all workers
+        """
+        if not self.od_config.enable_lora:
+            logger.warning("LoRA support is not enabled. Set enable_lora=True in config.")
+            return False
+        try:
+            result = self.collective_rpc(
+                method="remove_lora_adapter",
+                args=(lora_id,),
+                unique_reply_rank=0,
+                kwargs={"exec_all_ranks": True},
+            )
+
+            if isinstance(result, dict):
+                status = result.get("status")
+                if status == "success":
+                    logger.info(f"Successfully removed LoRA adapter {lora_id}")
+                    return True
+                else:
+                    error = result.get("error", "Unknown error")
+                    logger.error(f"Failed to remove LoRA adapter: {error}")
+                    return False
+            return False
+        except Exception as e:
+            logger.error(f"Error removing LoRA adapter: {e}")
+            return False
+
+    def list_loras(self) -> list[dict[str, Any]]:
+        """
+        List all loaded LoRA adapters
+        """
+        if not self.od_config.enable_lora:
+            logger.warning("LoRA support is not enabled. Set enable_lora=True in config.")
+            return []
+        try:
+            result = self.collective_rpc(
+                method="list_lora_adapters",
+                unique_reply_rank=0,
+            )
+
+            if isinstance(result, dict):
+                status = result.get("status")
+                if status == "success":
+                    return result.get("adapters", [])
+                return []
+        except Exception as e:
+            logger.error(f"Error listing LoRA adapters: {e}")
+            return []
+
+    def update_lora_weights(self, lora_id: int, weights: dict[str, Any]) -> bool:
+        """update weights for a LoRA adapter"""
+        if not self.od_config.enable_lora:
+            logger.warning("LoRA support is not enabled. Set enable_lora=True in config.")
+            return False
+        try:
+            # tensor -> dict
+            serialized_weights = {}
+            for param_name, weight in weights.items():
+                if isinstance(weight, torch.Tensor):
+                    serialized_weights[param_name] = {
+                        "shape": list(weight.shape),
+                        "dtype": str(weight.dtype),
+                        "data": weight.cpu().numpy().tolist(),
+                    }
+                else:
+                    serialized_weights[param_name] = weight
+
+            result = self.collective_rpc(
+                method="update_lora_weights",
+                args=(lora_id, serialized_weights),
+                unique_reply_rank=0,
+                kwargs={"exec_all_ranks": True},
+            )
+
+            if isinstance(result, dict):
+                status = result.get("status")
+                if status == "success":
+                    logger.info(f"Successfully updated weights for LoRA adapter {lora_id}")
+                    return True
+                else:
+                    error = result.get("error", "Unknown error")
+                    logger.error(f"Failed to update LoRA weights: {error}")
+                    return False
+            return False
+        except Exception as e:
+            logger.error(f"Error updating LoRA weights: {e}")
+            return False
 
     def close(self) -> None:
         self._finalizer()
