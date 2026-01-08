@@ -282,6 +282,8 @@ class OmniDiffusionConfig:
     # can restrict layers to adapt, e.g. ["q_proj"]
     # Will adapt only q, k, v, o by default.
     lora_target_modules: list[str] | None = None
+    # Dynamic LoRA serving
+    lora_dirs: list[str] | None = None
 
     output_type: str = "pil"
 
@@ -442,6 +444,16 @@ class OmniDiffusionConfig:
         elif not isinstance(self.cache_config, DiffusionCacheConfig):
             # If it's neither dict nor DiffusionCacheConfig, convert to empty config
             self.cache_config = DiffusionCacheConfig()
+
+        # normalize lora directories
+        if self.lora_dirs is not None:
+            norm_dirs: list[str] = []
+            for d in self.lora_dirs:
+                try:
+                    norm_dirs.append(os.path.relpath(d))
+                except OSError:
+                    logger.warning("Invalid lora_dirs entry ignored: %s", d)
+            self.lora_dirs = norm_dirs
 
     def update_multimodal_support(self) -> None:
         self.supports_multimodal_inputs = self.model_class_name in {"QwenImageEditPlusPipeline"}

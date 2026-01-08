@@ -24,6 +24,7 @@ from vllm_omni.diffusion.distributed.parallel_state import (
     initialize_model_parallel,
 )
 from vllm_omni.diffusion.forward_context import set_forward_context
+from vllm_omni.diffusion.lora.manager import DiffusionLoRAManager
 from vllm_omni.diffusion.model_loader.diffusers_loader import DiffusersPipelineLoader
 from vllm_omni.diffusion.request import OmniDiffusionRequest
 
@@ -47,6 +48,7 @@ class GPUWorker:
         self.pipeline = None
         self.device = None
         self._sleep_saved_buffers: dict[str, torch.Tensor] = {}
+        self.lora_manager: DiffusionLoRAManager | None = None
         self.init_device_and_model()
 
     def init_device_and_model(self) -> None:
@@ -62,6 +64,7 @@ class GPUWorker:
 
         self.device = torch.device(f"cuda:{rank}")
         torch.cuda.set_device(self.device)
+        logger.info("LoRA whitelist (od_config.lora_dirs): %s", getattr(self.od_config, "lora_dirs", None))
 
         # hack
         vllm_config = VllmConfig()
@@ -106,6 +109,15 @@ class GPUWorker:
         if self.cache_backend is not None:
             self.cache_backend.enable(self.pipeline)
 
+        # Initialize LoRA manager (optional, lazy init)
+        self.lora_manager = DiffusionLoRAManager(
+            pipeline=self.pipeline,
+            device=self.device,
+            dtype=self.od_config.dtype,
+            max_cached_adapters=10,
+            allowed_dirs=self.od_config.lora_dirs,
+        )
+
     def generate(self, requests: list[OmniDiffusionRequest]) -> DiffusionOutput:
         """
         Generate output for the given requests.
@@ -135,6 +147,14 @@ class GPUWorker:
         # Refresh cache context if needed
         if self.cache_backend is not None and self.cache_backend.is_enabled():
             self.cache_backend.refresh(self.pipeline, req.num_inference_steps)
+
+        # apply LoRA (if requested)
+        if self.lora_manager is not None:
+            try:
+                self.lora_manager.set_active_adapter(req.lora_request)
+            except Exception as e:
+                logger.warning("LoRA activation skipped: %s", e)
+
         with set_forward_context(vllm_config=self.vllm_config, omni_diffusion_config=self.od_config):
             output = self.pipeline.forward(req)
         return output

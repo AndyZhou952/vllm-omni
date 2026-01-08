@@ -204,13 +204,25 @@ class OmniBase:
         # Load stage configurations from YAML
         if stage_configs_path is None:
             self.config_path = resolve_model_config_path(model)
-            self.stage_configs = load_stage_configs_from_model(model)
+            self.stage_configs = load_stage_configs_from_model(model, base_engine_args=kwargs)
             if not self.stage_configs:
                 default_stage_cfg = self._create_default_diffusion_stage_cfg(kwargs)
                 self.stage_configs = OmegaConf.create(default_stage_cfg)
         else:
             self.config_path = stage_configs_path
             self.stage_configs = load_stage_configs_from_yaml(stage_configs_path)
+
+        # inject diffusion LoRA-related from kwargs if not present in the stage config
+        for cfg in self.stage_configs:
+            try:
+                if getattr(cfg, "stage_type", None) == "diffusion":
+                    continue
+                if not hasattr(cfg, "engine_args") or cfg.engine_args is None:
+                    cfg.engine_args = {}
+                if kwargs.get("lora_dirs", None) is not None:
+                    cfg.engine_args.lora_dirs = kwargs["lora_dirs"]
+            except Exception:
+                pass
 
         # Initialize connectors
         self.omni_transfer_config, self.connectors = initialize_orchestrator_connectors(
