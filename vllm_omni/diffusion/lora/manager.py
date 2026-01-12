@@ -1,0 +1,256 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+
+import math
+import time
+from collections import OrderedDict
+
+import torch
+import torch.nn as nn
+
+from vllm.config.lora import LoRAConfig
+from vllm.lora.layers import BaseLayerWithLoRA
+from vllm.lora.models import LoRAModel
+from vllm.lora.peft_helper import PEFTHelper
+from vllm.lora.punica_wrapper import get_punica_wrapper
+from vllm.lora.request import LoRARequest
+from vllm.lora.utils import (
+    get_adapter_absolute_path,
+    get_supported_lora_modules,
+    from_layer,
+    replace_submodule,
+)
+from vllm.logger import init_logger
+
+logger = init_logger(__name__)
+
+
+def _match_target_modules(module_name: str, target_modules: list[str]) -> bool:
+    """ from vllm/lora/model_manager.py _match_target_modules, helper function
+    """
+    import regex as re
+
+    return any(
+        re.match(r".*\.{target_module}$".format(target_module=target_module), module_name)
+        or target_module == module_name
+        for target_module in target_modules
+    )
+
+
+class DiffusionLoRAManager:
+    """Manager for LoRA adapters in diffusion models.
+
+    Reuses vLLM's LoRA infrastructure, adapted for diffusion pipelines.
+    Uses LRU cache management similar to LRUCacheLoRAModelManager.
+    """
+
+    def __init__(
+            self,
+            pipeline: nn.Module,
+            device: torch.device,
+            dtype: torch.dtype,
+            max_cached_adapters: int = 1,
+            static_lora_path: str | None = None,
+            static_lora_scale: float = 1.0,
+    ):
+        """
+        Initialize the DiffusionLoRAManager.
+        """
+        self.pipeline = pipeline
+        self.device = device
+        self.dtype = dtype
+
+        # LRU-style cache management
+        self.max_cached_adapters = max_cached_adapters  # max_cpu_loras
+        self._registered_adapters: dict[int, LoRAModel] = {}  # adapter_id -> LoRAModel
+        self._active_adapter_id: int | None = None
+        self._adapter_scales: dict[int, float] = {}  # adapter_id -> external scale
+
+        # LRU cache tracking (adapter_id -> last_used_time)
+        self._adapter_access_order: OrderedDict[int, float] = OrderedDict()
+
+        # track replaced modules
+        # key: full module name (component.module.path); value: LoRA layer
+        self._lora_modules: dict[str, BaseLayerWithLoRA] = {}
+
+        # for first time layer replacement
+        self._loaded_adapter: bool = False
+
+        # create punica wrapper for LoRA computation
+        # estimate max_num_batched_tokens from pipeline scheduler config
+        max_image_seq_len = 4096  # default
+        if hasattr(pipeline, "scheduler") and hasattr(pipeline.scheduler, "config"):
+            scheduler_config = pipeline.scheduler.config
+            if isinstance(scheduler_config, dict):
+                max_image_seq_len = scheduler_config.get("max_image_seq_len", 4096)
+            elif hasattr(scheduler_config, "get"):
+                max_image_seq_len = scheduler_config.get("max_image_seq_len", 4096)
+
+        max_num_batched_tokens = math.ceil(max_image_seq_len / 8) * 8
+
+        self.punica_wrapper = get_punica_wrapper(
+            max_num_batched_tokens=max_num_batched_tokens,
+            max_batches=1,  # single request
+            device=self.device,
+            max_loras=1,  # single lora
+        )
+
+        self._static_mode = (static_lora_path is not None)
+        if static_lora_path is not None:
+            self._load_static_lora(static_lora_path, static_lora_scale)
+
+    def _load_static_lora(self, lora_path: str, static_lora_scale: float) -> None:
+        static_request = LoRARequest(lora_name="static", lora_int_id=1, lora_path=lora_path)
+        self.set_active_adapter(static_request, static_lora_scale)
+
+    def set_active_adapter(self, lora_request: LoRARequest | None, lora_scale: float = 1.0) -> None:
+        """Set the active LoRA adapter for the pipeline.
+
+        Args:
+            lora_request: The LoRA request, or None to deactivate all adapters.
+            lora_scale: The external scale for the LoRA adapter.
+        """
+        if lora_request is None:
+            self._deactivate_all_adapters()
+            return
+
+        adapter_id = lora_request.lora_int_id
+        if adapter_id not in self._registered_adapters:
+            lora_model, peft_helper = self._load_adapter(lora_request)
+            self._registered_adapters[adapter_id] = lora_model
+            self._adapter_scales[adapter_id] = lora_scale
+
+            if not self._loaded_adapter:
+                self._replace_layers_with_lora(peft_helper)
+
+            # evict if cache full
+            self._evict_if_needed()
+
+        # update access order
+        self._adapter_access_order[adapter_id] = time.time()
+        self._adapter_access_order.move_to_end(adapter_id)
+
+        self._activate_adapter(adapter_id)
+
+    def _load_adapter(
+            self,
+            lora_request: LoRARequest,
+    ) -> tuple[LoRAModel, PEFTHelper]:
+
+        supported_lora_modules = set(get_supported_lora_modules(self.pipeline))
+
+        lora_path = get_adapter_absolute_path(lora_request.lora_path)
+
+        peft_helper = PEFTHelper.from_local_dir(
+            lora_path,
+            max_position_embeddings=None,  # no need in diffusion
+            tensorizer_config_dict=lora_request.tensorizer_config_dict,
+        )
+
+        lora_model = LoRAModel.from_local_checkpoint(
+            lora_path,
+            expected_lora_modules=supported_lora_modules,
+            peft_helper=peft_helper,
+            lora_model_id=lora_request.lora_int_id,
+            device="cpu",  # consistent w/ vllm's behavior
+            dtype=self.dtype,
+            model_vocab_size=None,
+            tensorizer_config_dict=lora_request.tensorizer_config_dict,
+            weights_mapper=None,
+        )
+
+        for lora in lora_model.loras.values():
+            lora.optimize()  # ref: _create_merged_loras_inplace, internal scaling
+
+        return lora_model, peft_helper
+
+    def _replace_layers_with_lora(self, peft_helper: PEFTHelper) -> None:
+        target_modules = peft_helper.target_modules
+        if not isinstance(target_modules, list):
+            target_modules = [target_modules]
+
+        # dummy lora config
+        lora_config = LoRAConfig(
+            max_lora_rank=peft_helper.r,
+            max_loras=1,
+            max_cpu_loras=self.max_cached_adapters,
+            lora_dtype=self.dtype,
+            fully_sharded_loras=False,
+        )
+
+        if hasattr(self.pipeline, "transformer"):
+            for module_name, module in self.pipeline.transformer.named_modules(remove_duplicate=False):
+                full_module_name = f"transformer.{module_name}"
+                if not _match_target_modules(module_name, target_modules):
+                    continue
+
+                lora_layer = from_layer(
+                    layer=module,
+                    max_loras=1,
+                    lora_config=lora_config,
+                    packed_modules_list=[],
+                    model_config=None,
+                )
+
+                if lora_layer is not module and isinstance(lora_layer, BaseLayerWithLoRA):
+                    replace_submodule(self.pipeline.transformer, module_name, lora_layer)
+                    self._lora_modules[full_module_name] = lora_layer
+                    lora_layer.set_mapping(self.punica_wrapper)
+
+        self._loaded_adapter = True
+
+    def _activate_adapter(self, adapter_id: int) -> None:
+        if self._active_adapter_id == adapter_id:
+            return
+
+        lora_model = self._registered_adapters[adapter_id]
+
+        # activate weights in each LoRA layer
+        for full_module_name, lora_layer in self._lora_modules.items():
+            # try full name first
+            lora_weights = lora_model.get_lora(full_module_name)
+            # fallbacks
+            if lora_weights is None:
+                # relative name
+                component_relative_name = full_module_name.split(".", 1)[
+                    -1] if "." in full_module_name else full_module_name
+                lora_weights = lora_model.get_lora(component_relative_name)
+            if lora_weights is None:
+                # try just the suffix
+                module_suffix = full_module_name.split(".")[-1]
+                lora_weights = lora_model.get_lora(module_suffix)
+
+            if lora_weights is None:
+                # Reset if no LoRA for this module
+                lora_layer.reset_lora(0)
+                continue
+
+            scale = self._adapter_scales.get(adapter_id, 1.0)
+            scaled_lora_b = lora_weights.lora_b * scale
+            lora_layer.set_lora(index=0, lora_a=lora_weights.lora_a, lora_b=scaled_lora_b)
+
+        self._active_adapter_id = adapter_id
+
+    def _deactivate_all_adapters(self) -> None:
+        for lora_layer in self._lora_modules.values():
+            lora_layer.reset_lora(0)
+        self._active_adapter_id = None
+
+    def _evict_if_needed(self) -> None:
+        while len(self._registered_adapters) >= self.max_cached_adapters:
+            if not self._adapter_access_order:
+                break
+
+            lru_adapter_id = next(iter(self._adapter_access_order))
+            self._remove_adapter(lru_adapter_id)
+
+    def _remove_adapter(self, adapter_id: int) -> bool:
+        if adapter_id not in self._registered_adapters:
+            return False
+
+        if self._active_adapter_id == adapter_id:
+            self._deactivate_all_adapters()
+
+        del self._registered_adapters[adapter_id]
+        self._adapter_access_order.pop(adapter_id, None)
+        return True
