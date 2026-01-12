@@ -159,8 +159,9 @@ class GPUWorker:
 
         # Apply LoRA (if requested)
         if self.lora_manager is not None:
-            if self.lora_manager._static_mode and req.lora_request is not None:
-                logger.warning("Dynamic LoRA request ignored in static mode. Using static LoRA.")
+            if self.lora_manager._static_mode:
+                if req.lora_request is not None:
+                    logger.warning("Dynamic LoRA request ignored in static mode. Using static LoRA.")
             else:
                 try:
                     self.lora_manager.set_active_adapter(req.lora_request, req.lora_scale)
