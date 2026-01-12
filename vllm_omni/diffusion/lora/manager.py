@@ -37,6 +37,20 @@ def _match_target_modules(module_name: str, target_modules: list[str]) -> bool:
     )
 
 
+def _expand_expected_modules_for_merged_projections(
+        supported_modules: set[str]
+) -> set[str]:
+    expanded = set(supported_modules)
+
+    # known patterns: merged projections accept their separate counterparts
+    if "add_kv_proj" in supported_modules:
+        expanded.update(["add_k_proj", "add_v_proj", "add_q_proj"])
+    if "to_qkv" in supported_modules:
+        expanded.update(["to_q", "to_k", "to_v"])
+
+    return expanded
+
+
 class DiffusionLoRAManager:
     """Manager for LoRA adapters in diffusion models.
 
@@ -154,7 +168,11 @@ class DiffusionLoRAManager:
     ) -> tuple[LoRAModel, PEFTHelper]:
 
         supported_lora_modules = set(get_supported_lora_modules(self.pipeline))
-        logger.debug("Supported LoRA modules: %s", supported_lora_modules)
+        transformer = getattr(self.pipeline, "transformer", None)
+        expected_lora_modules = _expand_expected_modules_for_merged_projections(
+            supported_lora_modules
+        )
+        logger.debug("Supported LoRA modules: %s", expected_lora_modules)
 
         lora_path = get_adapter_absolute_path(lora_request.lora_path)
         logger.debug("Resolved LoRA path: %s", lora_path)
@@ -172,7 +190,7 @@ class DiffusionLoRAManager:
 
         lora_model = LoRAModel.from_local_checkpoint(
             lora_path,
-            expected_lora_modules=supported_lora_modules,
+            expected_lora_modules=expected_lora_modules,
             peft_helper=peft_helper,
             lora_model_id=lora_request.lora_int_id,
             device="cpu",  # consistent w/ vllm's behavior
