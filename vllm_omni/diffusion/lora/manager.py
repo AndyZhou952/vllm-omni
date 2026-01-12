@@ -88,6 +88,12 @@ class DiffusionLoRAManager:
 
         max_num_batched_tokens = math.ceil(max_image_seq_len / 8) * 8
 
+        logger.info(
+            "Initializing DiffusionLoRAManager: device=%s, dtype=%s, max_cached_adapters=%d, "
+            "max_num_batched_tokens=%d, static_lora_path=%s",
+            device, dtype, max_cached_adapters, max_num_batched_tokens, static_lora_path
+        )
+
         self.punica_wrapper = get_punica_wrapper(
             max_num_batched_tokens=max_num_batched_tokens,
             max_batches=1,  # single request
@@ -97,6 +103,7 @@ class DiffusionLoRAManager:
 
         self._static_mode = (static_lora_path is not None)
         if static_lora_path is not None:
+            logger.info("Loading static LoRA from %s with scale %.2f", static_lora_path, static_lora_scale)
             self._load_static_lora(static_lora_path, static_lora_scale)
 
     def _load_static_lora(self, lora_path: str, static_lora_scale: float) -> None:
@@ -111,11 +118,18 @@ class DiffusionLoRAManager:
             lora_scale: The external scale for the LoRA adapter.
         """
         if lora_request is None:
+            logger.debug("No lora_request provided, deactivating all LoRA adapters")
             self._deactivate_all_adapters()
             return
 
         adapter_id = lora_request.lora_int_id
+        logger.debug(
+            "Setting active adapter: id=%d, name=%s, path=%s, scale=%.2f, cache_size=%d/%d",
+            adapter_id, lora_request.lora_name, lora_request.lora_path, lora_scale,
+            len(self._registered_adapters), self.max_cached_adapters
+        )
         if adapter_id not in self._registered_adapters:
+            logger.info("Loading new adapter: id=%d, name=%s", adapter_id, lora_request.lora_name)
             lora_model, peft_helper = self._load_adapter(lora_request)
             self._registered_adapters[adapter_id] = lora_model
             self._adapter_scales[adapter_id] = lora_scale
@@ -125,6 +139,8 @@ class DiffusionLoRAManager:
 
             # evict if cache full
             self._evict_if_needed()
+        else:
+            logger.debug("Adapter %d already loaded, activating", adapter_id)
 
         # update access order
         self._adapter_access_order[adapter_id] = time.time()
@@ -138,13 +154,20 @@ class DiffusionLoRAManager:
     ) -> tuple[LoRAModel, PEFTHelper]:
 
         supported_lora_modules = set(get_supported_lora_modules(self.pipeline))
+        logger.debug("Supported LoRA modules: %s", supported_lora_modules)
 
         lora_path = get_adapter_absolute_path(lora_request.lora_path)
+        logger.debug("Resolved LoRA path: %s", lora_path)
 
         peft_helper = PEFTHelper.from_local_dir(
             lora_path,
             max_position_embeddings=None,  # no need in diffusion
             tensorizer_config_dict=lora_request.tensorizer_config_dict,
+        )
+
+        logger.info(
+            "Loaded PEFT config: r=%d, lora_alpha=%d, target_modules=%s",
+            peft_helper.r, peft_helper.lora_alpha, peft_helper.target_modules
         )
 
         lora_model = LoRAModel.from_local_checkpoint(
@@ -157,6 +180,11 @@ class DiffusionLoRAManager:
             model_vocab_size=None,
             tensorizer_config_dict=lora_request.tensorizer_config_dict,
             weights_mapper=None,
+        )
+
+        logger.info(
+            "Loaded LoRA model: id=%d, num_modules=%d, modules=%s",
+            lora_model.id, len(lora_model.loras), list(lora_model.loras.keys())
         )
 
         for lora in lora_model.loras.values():
@@ -196,13 +224,16 @@ class DiffusionLoRAManager:
                     replace_submodule(self.pipeline.transformer, module_name, lora_layer)
                     self._lora_modules[full_module_name] = lora_layer
                     lora_layer.set_mapping(self.punica_wrapper)
+                    logger.debug("Replaced layer: %s -> %s", full_module_name, type(lora_layer).__name__)
 
         self._loaded_adapter = True
 
     def _activate_adapter(self, adapter_id: int) -> None:
         if self._active_adapter_id == adapter_id:
+            logger.debug("Adapter %d already active, skipping", adapter_id)
             return
 
+        logger.info("Activating adapter: id=%d", adapter_id)
         lora_model = self._registered_adapters[adapter_id]
 
         # activate weights in each LoRA layer
@@ -228,29 +259,42 @@ class DiffusionLoRAManager:
             scale = self._adapter_scales.get(adapter_id, 1.0)
             scaled_lora_b = lora_weights.lora_b * scale
             lora_layer.set_lora(index=0, lora_a=lora_weights.lora_a, lora_b=scaled_lora_b)
+            logger.debug(
+                "Activated LoRA for %s: lora_a shape=%s, lora_b shape=%s, scale=%.2f",
+                full_module_name, lora_weights.lora_a.shape, lora_weights.lora_b.shape, scale
+            )
 
         self._active_adapter_id = adapter_id
 
     def _deactivate_all_adapters(self) -> None:
+        logger.info("Deactivating all adapters: %d layers", len(self._lora_modules))
         for lora_layer in self._lora_modules.values():
             lora_layer.reset_lora(0)
         self._active_adapter_id = None
+        logger.debug("All adapters deactivated")
 
     def _evict_if_needed(self) -> None:
         while len(self._registered_adapters) >= self.max_cached_adapters:
             if not self._adapter_access_order:
+                logger.warning("Cache full but no adapters to evict")
                 break
 
             lru_adapter_id = next(iter(self._adapter_access_order))
+            logger.info("Evicting LRU adapter: id=%d (cache: %d/%d)",
+                        lru_adapter_id, len(self._registered_adapters), self.max_cached_adapters)
             self._remove_adapter(lru_adapter_id)
 
     def _remove_adapter(self, adapter_id: int) -> bool:
         if adapter_id not in self._registered_adapters:
+            logger.debug("Adapter %d not found, cannot remove", adapter_id)
             return False
 
+        logger.info("Removing adapter: id=%d", adapter_id)
         if self._active_adapter_id == adapter_id:
             self._deactivate_all_adapters()
 
         del self._registered_adapters[adapter_id]
         self._adapter_access_order.pop(adapter_id, None)
+        logger.debug("Adapter %d removed, cache size: %d/%d",
+                     adapter_id, len(self._registered_adapters), self.max_cached_adapters)
         return True
