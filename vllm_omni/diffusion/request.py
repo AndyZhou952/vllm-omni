@@ -8,6 +8,7 @@ from typing import Any
 
 import PIL.Image
 import torch
+from vllm.lora.request import LoRARequest
 
 
 @dataclass
@@ -136,6 +137,10 @@ class OmniDiffusionRequest:
     # Misc
     save_output: bool = True
     return_frames: bool = False
+
+    # LoRA
+    lora_request: LoRARequest | None = None
+    lora_scale: float = 1.0
 
     # STA parameters
     STA_param: list | None = None

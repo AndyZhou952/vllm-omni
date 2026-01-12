@@ -276,12 +276,8 @@ class OmniDiffusionConfig:
     # pipeline_config: PipelineConfig = field(default_factory=PipelineConfig, repr=False)
 
     # LoRA parameters
-    # (Wenxuan) prefer to keep it here instead of in pipeline config to not make it complicated.
     lora_path: str | None = None
-    lora_nickname: str = "default"  # for swapping adapters in the pipeline
-    # can restrict layers to adapt, e.g. ["q_proj"]
-    # Will adapt only q, k, v, o by default.
-    lora_target_modules: list[str] | None = None
+    static_lora_scale: float = 1.0
 
     output_type: str = "pil"
 
