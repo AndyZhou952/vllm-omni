@@ -94,6 +94,9 @@ class DiffusersPipelineLoader:
         load_format = self.load_config.load_format
         use_safetensors = False
         index_file = DIFFUSION_MODEL_WEIGHTS_INDEX
+        index_file_with_subfolder = (
+            f"{subfolder}/{index_file}" if subfolder else index_file
+        )
 
         # only hf is supported currently
         if load_format == "auto":
@@ -129,8 +132,8 @@ class DiffusersPipelineLoader:
         for pattern in allow_patterns:
             hf_weights_files += glob.glob(os.path.join(hf_folder, pattern))
             if len(hf_weights_files) > 0:
-                if pattern == "*.safetensors":
-                    use_safetensors = True
+                # Decide by actual files rather than pattern name (patterns may include subfolders).
+                use_safetensors = any(f.endswith(".safetensors") for f in hf_weights_files)
                 break
 
         if use_safetensors:
@@ -142,11 +145,15 @@ class DiffusersPipelineLoader:
             if not is_local:
                 download_safetensors_index_file_from_hf(
                     model_name_or_path,
-                    index_file,
+                    index_file_with_subfolder,
                     self.load_config.download_dir,
                     revision,
                 )
-            hf_weights_files = filter_duplicate_safetensors_files(hf_weights_files, hf_folder, index_file)
+            hf_weights_files = filter_duplicate_safetensors_files(
+                hf_weights_files,
+                hf_folder,
+                index_file_with_subfolder,
+            )
         else:
             hf_weights_files = filter_files_not_needed_for_inference(hf_weights_files)
 
@@ -188,8 +195,9 @@ class DiffusersPipelineLoader:
 
     def download_model(self, model_config: ModelConfig) -> None:
         self._prepare_weights(
-            model_config.model,
-            model_config.revision,
+            model_name_or_path=model_config.model,
+            subfolder=None,
+            revision=model_config.revision,
             fall_back_to_pt=True,
             allow_patterns_overrides=None,
         )
