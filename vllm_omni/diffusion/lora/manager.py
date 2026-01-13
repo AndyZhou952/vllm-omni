@@ -168,7 +168,6 @@ class DiffusionLoRAManager:
     ) -> tuple[LoRAModel, PEFTHelper]:
 
         supported_lora_modules = set(get_supported_lora_modules(self.pipeline))
-        transformer = getattr(self.pipeline, "transformer", None)
         expected_lora_modules = _expand_expected_modules_for_merged_projections(
             supported_lora_modules
         )
