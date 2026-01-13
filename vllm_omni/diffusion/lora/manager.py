@@ -292,7 +292,7 @@ class DiffusionLoRAManager:
         logger.debug("All adapters deactivated")
 
     def _evict_if_needed(self) -> None:
-        while len(self._registered_adapters) >= self.max_cached_adapters:
+        while len(self._registered_adapters) > self.max_cached_adapters:
             if not self._adapter_access_order:
                 logger.warning("Cache full but no adapters to evict")
                 break
