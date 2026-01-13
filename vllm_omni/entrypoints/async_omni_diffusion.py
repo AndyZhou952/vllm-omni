@@ -309,3 +309,37 @@ class AsyncOmniDiffusion:
             None,
         )
         return all(results) if isinstance(results, list) else results
+
+    async def list_loras(self) -> list[int]:
+        """List all registered LoRA adapter IDs."""
+        loop = asyncio.get_event_loop()
+        results = await loop.run_in_executor(
+            self._executor,
+            self.engine.collective_rpc,
+            "list_loras",
+            None,
+            (),
+            {},
+            None,
+        )
+        # collective_rpc returns list from workers; flatten unique ids
+        if not isinstance(results, list):
+            return results or []
+        merged: set[int] = set()
+        for part in results:
+            merged.update(part or [])
+        return sorted(merged)
+
+    async def pin_lora(self, lora_id: int) -> bool:
+        """Prevent an adapter from being evicted."""
+        loop = asyncio.get_event_loop()
+        results = await loop.run_in_executor(
+            self._executor,
+            self.engine.collective_rpc,
+            "pin_lora",
+            None,
+            (),
+            {"adapter_id": lora_id},
+            None,
+        )
+        return all(results) if isinstance(results, list) else results

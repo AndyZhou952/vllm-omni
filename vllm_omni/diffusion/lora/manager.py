@@ -82,6 +82,8 @@ class DiffusionLoRAManager:
 
         # LRU cache tracking (adapter_id -> last_used_time)
         self._adapter_access_order: OrderedDict[int, float] = OrderedDict()
+        # Pinned adapters are not evicted
+        self._pinned_adapters: set[int] = set()
 
         # track replaced modules
         # key: full module name (component.module.path); value: LoRA layer
@@ -284,13 +286,23 @@ class DiffusionLoRAManager:
 
     def _evict_if_needed(self) -> None:
         while len(self._registered_adapters) > self.max_cached_adapters:
-            if not self._adapter_access_order:
-                logger.warning("Cache full but no adapters to evict")
+            # Pick LRU among non-pinned adapters
+            evict_candidates = [aid for aid in self._adapter_access_order.keys() if aid not in self._pinned_adapters]
+            if not evict_candidates:
+                logger.warning(
+                    "Cache full (%d) but all adapters are pinned; cannot evict. "
+                    "Increase max_cached_adapters or unpin adapters.",
+                    self.max_cached_adapters,
+                )
                 break
 
-            lru_adapter_id = next(iter(self._adapter_access_order))
-            logger.info("Evicting LRU adapter: id=%d (cache: %d/%d)",
-                        lru_adapter_id, len(self._registered_adapters), self.max_cached_adapters)
+            lru_adapter_id = evict_candidates[0]
+            logger.info(
+                "Evicting LRU adapter: id=%d (cache: %d/%d)",
+                lru_adapter_id,
+                len(self._registered_adapters),
+                self.max_cached_adapters,
+            )
             self.remove_adapter(lru_adapter_id)
 
     def add_lora(self, lora_request: LoRARequest, lora_scale: float = 1.0) -> bool:
@@ -335,6 +347,23 @@ class DiffusionLoRAManager:
         del self._registered_adapters[adapter_id]
         self._adapter_scales.pop(adapter_id, None)
         self._adapter_access_order.pop(adapter_id, None)
+        self._pinned_adapters.discard(adapter_id)
         logger.debug("Adapter %d removed, cache size: %d/%d",
                      adapter_id, len(self._registered_adapters), self.max_cached_adapters)
+        return True
+
+    def list_adapters(self) -> list[int]:
+        """Return list of registered adapter ids."""
+        return list(self._registered_adapters.keys())
+
+    def pin_adapter(self, adapter_id: int) -> bool:
+        """Mark an adapter as pinned so it will not be evicted."""
+        if adapter_id not in self._registered_adapters:
+            logger.debug("Adapter %d not found, cannot pin", adapter_id)
+            return False
+        self._pinned_adapters.add(adapter_id)
+        # Touch access order so it is most recently used
+        self._adapter_access_order[adapter_id] = time.time()
+        self._adapter_access_order.move_to_end(adapter_id)
+        logger.info("Pinned adapter id=%d (won't be evicted)", adapter_id)
         return True
