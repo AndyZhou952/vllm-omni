@@ -87,9 +87,6 @@ class DiffusionLoRAManager:
         # key: full module name (component.module.path); value: LoRA layer
         self._lora_modules: dict[str, BaseLayerWithLoRA] = {}
 
-        # for first time layer replacement
-        self._loaded_adapter: bool = False
-
         # create punica wrapper for LoRA computation
         # estimate max_num_batched_tokens from pipeline scheduler config
         max_image_seq_len = 4096  # default
@@ -115,14 +112,14 @@ class DiffusionLoRAManager:
             max_loras=1,  # single lora
         )
 
-        self._static_mode = (static_lora_path is not None)
         if static_lora_path is not None:
             logger.info("Loading static LoRA from %s with scale %.2f", static_lora_path, static_lora_scale)
-            self._load_static_lora(static_lora_path, static_lora_scale)
-
-    def _load_static_lora(self, lora_path: str, static_lora_scale: float) -> None:
-        static_request = LoRARequest(lora_name="static", lora_int_id=1, lora_path=lora_path)
-        self.set_active_adapter(static_request, static_lora_scale)
+            static_request = LoRARequest(
+                lora_name = 'static',
+                lora_int_id = 1,
+                lora_path = static_lora_path,
+            )
+            self.set_active_adapter(static_request, static_lora_scale)
 
     def set_active_adapter(self, lora_request: LoRARequest | None, lora_scale: float = 1.0) -> None:
         """Set the active LoRA adapter for the pipeline.
@@ -144,21 +141,14 @@ class DiffusionLoRAManager:
         )
         if adapter_id not in self._registered_adapters:
             logger.info("Loading new adapter: id=%d, name=%s", adapter_id, lora_request.lora_name)
-            lora_model, peft_helper = self._load_adapter(lora_request)
-            self._registered_adapters[adapter_id] = lora_model
-            self._adapter_scales[adapter_id] = lora_scale
-
-            if not self._loaded_adapter:
-                self._replace_layers_with_lora(peft_helper)
-
-            # evict if cache full
-            self._evict_if_needed()
+            self.add_lora(lora_request, lora_scale)
         else:
             logger.debug("Adapter %d already loaded, activating", adapter_id)
 
-        # update access order
-        self._adapter_access_order[adapter_id] = time.time()
-        self._adapter_access_order.move_to_end(adapter_id)
+            # update access order
+            self._adapter_scales[adapter_id] = lora_scale
+            self._adapter_access_order[adapter_id] = time.time()
+            self._adapter_access_order.move_to_end(adapter_id)
 
         self._activate_adapter(adapter_id)
 
@@ -229,6 +219,10 @@ class DiffusionLoRAManager:
                 if not _match_target_modules(module_name, target_modules):
                     continue
 
+                if full_module_name in self._lora_modules:
+                    logger.debug("Layer %s already replaced, skipping", full_module_name)
+                    continue
+
                 lora_layer = from_layer(
                     layer=module,
                     max_loras=1,
@@ -242,8 +236,6 @@ class DiffusionLoRAManager:
                     self._lora_modules[full_module_name] = lora_layer
                     lora_layer.set_mapping(self.punica_wrapper)
                     logger.debug("Replaced layer: %s -> %s", full_module_name, type(lora_layer).__name__)
-
-        self._loaded_adapter = True
 
     def _activate_adapter(self, adapter_id: int) -> None:
         if self._active_adapter_id == adapter_id:
@@ -299,9 +291,39 @@ class DiffusionLoRAManager:
             lru_adapter_id = next(iter(self._adapter_access_order))
             logger.info("Evicting LRU adapter: id=%d (cache: %d/%d)",
                         lru_adapter_id, len(self._registered_adapters), self.max_cached_adapters)
-            self._remove_adapter(lru_adapter_id)
+            self.remove_adapter(lru_adapter_id)
 
-    def _remove_adapter(self, adapter_id: int) -> bool:
+    def add_lora(self, lora_request: LoRARequest, lora_scale: float = 1.0) -> bool:
+        """
+        Add a new adapter to the cache without activating it.
+        """
+        adapter_id = lora_request.lora_int_id
+
+        if adapter_id in self._registered_adapters:
+            logger.debug("Adapter %d already registered, skipping", adapter_id)
+            return False
+
+        logger.info("Adding new adapter: id=%d, name=%s", adapter_id, lora_request.lora_name)
+        lora_model, peft_helper = self._load_adapter(lora_request)
+        self._registered_adapters[adapter_id] = lora_model
+        self._adapter_scales[adapter_id] = lora_scale
+
+        self._replace_layers_with_lora(peft_helper)
+
+        self._adapter_access_order[adapter_id] = time.time()
+        self._adapter_access_order.move_to_end(adapter_id)
+
+        # evict if cache full
+        self._evict_if_needed()
+
+        logger.debug("Adapter %d added, cache size: %d/%d",
+                     adapter_id, len(self._registered_adapters), self.max_cached_adapters)
+        return True
+
+    def remove_adapter(self, adapter_id: int) -> bool:
+        """
+        Remove an adapter from the cache.
+        """
         if adapter_id not in self._registered_adapters:
             logger.debug("Adapter %d not found, cannot remove", adapter_id)
             return False
@@ -311,6 +333,7 @@ class DiffusionLoRAManager:
             self._deactivate_all_adapters()
 
         del self._registered_adapters[adapter_id]
+        self._adapter_scales.pop(adapter_id, None)
         self._adapter_access_order.pop(adapter_id, None)
         logger.debug("Adapter %d removed, cache size: %d/%d",
                      adapter_id, len(self._registered_adapters), self.max_cached_adapters)

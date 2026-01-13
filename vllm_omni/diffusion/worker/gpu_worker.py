@@ -29,6 +29,7 @@ from vllm_omni.diffusion.lora.manager import DiffusionLoRAManager
 from vllm_omni.diffusion.model_loader.diffusers_loader import DiffusersPipelineLoader
 from vllm_omni.diffusion.offload import apply_offload_hooks
 from vllm_omni.diffusion.request import OmniDiffusionRequest
+from vllm.lora.request import LoRARequest
 
 logger = init_logger(__name__)
 
@@ -175,14 +176,10 @@ class GPUWorker:
 
         # Apply LoRA (if requested)
         if self.lora_manager is not None:
-            if self.lora_manager._static_mode:
-                if req.lora_request is not None:
-                    logger.warning("Dynamic LoRA request ignored in static mode. Using static LoRA.")
-            else:
-                try:
-                    self.lora_manager.set_active_adapter(req.lora_request, req.lora_scale)
-                except Exception as e:
-                    logger.warning("LoRA activation skipped: %s", e)
+            try:
+                self.lora_manager.set_active_adapter(req.lora_request, req.lora_scale)
+            except Exception as e:
+                logger.warning("LoRA activation skipped: %s", e)
 
         with set_forward_context(vllm_config=self.vllm_config, omni_diffusion_config=self.od_config):
             output = self.pipeline.forward(req)
@@ -190,6 +187,12 @@ class GPUWorker:
 
     def load_weights(self, weights: Iterable[tuple[str, torch.Tensor]]) -> set[str]:
         return self.pipeline.load_weights(weights)
+
+    def remove_lora(self, adapter_id: int) -> bool:
+        return self.lora_manager.remove_adapter(adapter_id) if self.lora_manager else False
+
+    def add_lora(self, lora_request: LoRARequest, lora_scale: float = 1.0) -> bool:
+        return self.lora_manager.add_lora(lora_request, lora_scale) if self.lora_manager else False
 
     def sleep(self, level: int = 1) -> bool:
         """
