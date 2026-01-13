@@ -194,6 +194,12 @@ class GPUWorker:
     def add_lora(self, lora_request: LoRARequest, lora_scale: float = 1.0) -> bool:
         return self.lora_manager.add_lora(lora_request, lora_scale) if self.lora_manager else False
 
+    def list_loras(self) -> list[int]:
+        return self.lora_manager.list_adapters() if self.lora_manager else []
+
+    def pin_lora(self, adapter_id: int) -> bool:
+        return self.lora_manager.pin_adapter(adapter_id) if self.lora_manager else False
+
     def sleep(self, level: int = 1) -> bool:
         """
         Put the worker to sleep. The worker should not process any requests.
