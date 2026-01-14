@@ -143,7 +143,7 @@ class DiffusionLoRAManager:
         )
         if adapter_id not in self._registered_adapters:
             logger.info("Loading new adapter: id=%d, name=%s", adapter_id, lora_request.lora_name)
-            self.add_adpater(lora_request, lora_scale)
+            self.add_adapter(lora_request, lora_scale)
         else:
             logger.debug("Adapter %d already loaded, activating", adapter_id)
 
@@ -305,7 +305,7 @@ class DiffusionLoRAManager:
             )
             self.remove_adapter(lru_adapter_id)
 
-    def add_adpater(self, lora_request: LoRARequest, lora_scale: float = 1.0) -> bool:
+    def add_adapter(self, lora_request: LoRARequest, lora_scale: float = 1.0) -> bool:
         """
         Add a new adapter to the cache without activating it.
         """
