@@ -192,7 +192,7 @@ class GPUWorker:
         return self.lora_manager.remove_adapter(adapter_id) if self.lora_manager else False
 
     def add_lora(self, lora_request: LoRARequest, lora_scale: float = 1.0) -> bool:
-        return self.lora_manager.add_adpater(lora_request, lora_scale) if self.lora_manager else False
+        return self.lora_manager.add_adapter(lora_request, lora_scale) if self.lora_manager else False
 
     def list_loras(self) -> list[int]:
         return self.lora_manager.list_adapters() if self.lora_manager else []
