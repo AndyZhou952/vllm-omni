@@ -8,7 +8,7 @@ from typing import Any
 
 import PIL.Image
 import torch
-from vllm.lora.request import LoRARequest
+from vllm_omni.lora.request import LoRARequest
 
 
 @dataclass

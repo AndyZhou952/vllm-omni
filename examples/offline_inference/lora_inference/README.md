@@ -12,12 +12,6 @@ Similar to vLLM, vLLM-omni uses a unified LoRA handling mechanism:
 
 Both approaches use the same underlying mechanism - all LoRA adapters are handled uniformly through `set_active_adapter()`. If no LoRA request is provided in a request, all adapters are deactivated.
 
-## Prerequisites
-
-- A compatible diffusion model (default: `stabilityai/stable-diffusion-3.5-medium`)
-- LoRA adapter files in PEFT format
-- vLLM-omni installed
-
 ## Usage
 
 ### Pre-loaded LoRA (via --lora-path)
@@ -27,7 +21,7 @@ Load a LoRA adapter at initialization. This adapter is pre-loaded into the cache
 ```bash
 python -m examples.offline_inference.lora_inference.lora_inference \
     --prompt "A piece of cheesecake" \
-    --lora-path /path/to/your/lora/adapter \
+    --lora-path /path/to/lora/ \
     --lora-scale 1.0 \
     --num_inference_steps 50 \
     --height 1024 \
@@ -44,7 +38,7 @@ Load a LoRA adapter on-demand for each request:
 ```bash
 python -m examples.offline_inference.lora_inference.lora_inference \
     --prompt "A piece of cheesecake" \
-    --lora-request-path /path/to/your/lora/adapter \
+    --lora-request-path /path/to/lora/ \
     --lora-request-id 1 \
     --lora-scale 1.0 \
     --num_inference_steps 50 \
@@ -70,8 +64,8 @@ python -m examples.offline_inference.lora_inference.lora_inference \
 
 ### LoRA Parameters
 
-- `--lora-path`: Path to LoRA adapter to pre-load at initialization (loads into cache with ID 1)
-- `--lora-request-path`: Path to LoRA adapter for per-request loading
+- `--lora-path`: Path to LoRA adapter folder to pre-load at initialization (loads into cache with ID 1)
+- `--lora-request-path`: Path to LoRA adapter folder for per-request loading
 - `--lora-request-id`: Integer ID for the LoRA adapter (required for per-request LoRA). If not provided and `--lora-request-path` is set, will use hash of path.
 - `--lora-scale`: Scale factor for LoRA weights (default: 1.0). Higher values increase the influence of the LoRA adapter.
 

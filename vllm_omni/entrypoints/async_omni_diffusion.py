@@ -18,7 +18,7 @@ from typing import Any
 from PIL import Image
 from vllm.logger import init_logger
 from vllm.transformers_utils.config import get_hf_file_to_dict
-from vllm.lora.request import LoRARequest
+from vllm_omni.lora.request import LoRARequest
 
 from vllm_omni.diffusion.data import OmniDiffusionConfig, TransformerConfig
 from vllm_omni.diffusion.diffusion_engine import DiffusionEngine
