@@ -1,26 +1,25 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
-import math
 import time
 from collections import OrderedDict
 
 import torch
 import torch.nn as nn
 
-from vllm_omni.lora.request import LoRARequest
 from vllm.config.lora import LoRAConfig
 from vllm.lora.layers import BaseLayerWithLoRA
 from vllm.lora.models import LoRAModel
 from vllm.lora.peft_helper import PEFTHelper
-from vllm.lora.punica_wrapper import get_punica_wrapper
+from vllm.lora.request import LoRARequest
 from vllm.lora.utils import (
     get_adapter_absolute_path,
     get_supported_lora_modules,
-    from_layer,
     replace_submodule,
 )
 from vllm.logger import init_logger
+
+from vllm_omni.diffusion.lora.utils import from_layer_diffusion
 
 logger = init_logger(__name__)
 
@@ -89,29 +88,9 @@ class DiffusionLoRAManager:
         # key: full module name (component.module.path); value: LoRA layer
         self._lora_modules: dict[str, BaseLayerWithLoRA] = {}
 
-        # create punica wrapper for LoRA computation
-        # estimate max_num_batched_tokens from pipeline scheduler config
-        max_image_seq_len = 4096  # default
-        if hasattr(pipeline, "scheduler") and hasattr(pipeline.scheduler, "config"):
-            scheduler_config = pipeline.scheduler.config
-            if isinstance(scheduler_config, dict):
-                max_image_seq_len = scheduler_config.get("max_image_seq_len", 4096)
-            elif hasattr(scheduler_config, "get"):
-                max_image_seq_len = scheduler_config.get("max_image_seq_len", 4096)
-
-        max_num_batched_tokens = math.ceil(max_image_seq_len / 8) * 8
-
         logger.info(
-            "Initializing DiffusionLoRAManager: device=%s, dtype=%s, max_cached_adapters=%d, "
-            "max_num_batched_tokens=%d, static_lora_path=%s",
-            device, dtype, max_cached_adapters, max_num_batched_tokens, static_lora_path
-        )
-
-        self.punica_wrapper = get_punica_wrapper(
-            max_num_batched_tokens=max_num_batched_tokens,
-            max_batches=1,  # single request
-            device=self.device,
-            max_loras=1,  # single lora
+            "Initializing DiffusionLoRAManager: device=%s, dtype=%s, max_cached_adapters=%d, static_lora_path=%s",
+            device, dtype, max_cached_adapters, static_lora_path
         )
 
         if static_lora_path is not None:
@@ -143,7 +122,7 @@ class DiffusionLoRAManager:
         )
         if adapter_id not in self._registered_adapters:
             logger.info("Loading new adapter: id=%d, name=%s", adapter_id, lora_request.lora_name)
-            self.add_adapter(lora_request, lora_scale)
+            self.add_adpater(lora_request, lora_scale)
         else:
             logger.debug("Adapter %d already loaded, activating", adapter_id)
 
@@ -225,7 +204,7 @@ class DiffusionLoRAManager:
                     logger.debug("Layer %s already replaced, skipping", full_module_name)
                     continue
 
-                lora_layer = from_layer(
+                lora_layer = from_layer_diffusion(
                     layer=module,
                     max_loras=1,
                     lora_config=lora_config,
@@ -236,7 +215,6 @@ class DiffusionLoRAManager:
                 if lora_layer is not module and isinstance(lora_layer, BaseLayerWithLoRA):
                     replace_submodule(self.pipeline.transformer, module_name, lora_layer)
                     self._lora_modules[full_module_name] = lora_layer
-                    lora_layer.set_mapping(self.punica_wrapper)
                     logger.debug("Replaced layer: %s -> %s", full_module_name, type(lora_layer).__name__)
 
     def _activate_adapter(self, adapter_id: int) -> None:
@@ -305,7 +283,7 @@ class DiffusionLoRAManager:
             )
             self.remove_adapter(lru_adapter_id)
 
-    def add_adapter(self, lora_request: LoRARequest, lora_scale: float = 1.0) -> bool:
+    def add_adpater(self, lora_request: LoRARequest, lora_scale: float = 1.0) -> bool:
         """
         Add a new adapter to the cache without activating it.
         """
