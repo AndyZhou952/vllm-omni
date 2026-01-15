@@ -29,7 +29,7 @@ from vllm_omni.diffusion.lora.manager import DiffusionLoRAManager
 from vllm_omni.diffusion.model_loader.diffusers_loader import DiffusersPipelineLoader
 from vllm_omni.diffusion.offload import apply_offload_hooks
 from vllm_omni.diffusion.request import OmniDiffusionRequest
-from vllm.lora.request import LoRARequest
+from vllm_omni.lora.request import LoRARequest
 
 logger = init_logger(__name__)
 
@@ -189,16 +189,16 @@ class GPUWorker:
         return self.pipeline.load_weights(weights)
 
     def remove_lora(self, adapter_id: int) -> bool:
-        return self.lora_manager.remove_adapter(adapter_id) if self.lora_manager else False
+        return self.lora_manager.remove_adapter(adapter_id)
 
     def add_lora(self, lora_request: LoRARequest, lora_scale: float = 1.0) -> bool:
-        return self.lora_manager.add_adapter(lora_request, lora_scale) if self.lora_manager else False
+        return self.lora_manager.add_adapter(lora_request, lora_scale)
 
     def list_loras(self) -> list[int]:
-        return self.lora_manager.list_adapters() if self.lora_manager else []
+        return self.lora_manager.list_adapters()
 
     def pin_lora(self, adapter_id: int) -> bool:
-        return self.lora_manager.pin_adapter(adapter_id) if self.lora_manager else False
+        return self.lora_manager.pin_adapter(adapter_id)
 
     def sleep(self, level: int = 1) -> bool:
         """

@@ -4,7 +4,7 @@
 import argparse
 from pathlib import Path
 
-from vllm.lora.request import LoRARequest
+from vllm_omni.lora.request import LoRARequest
 from vllm_omni.entrypoints.omni import Omni
 
 def parse_args() -> argparse.Namespace:

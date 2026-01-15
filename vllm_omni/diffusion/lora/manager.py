@@ -8,12 +8,12 @@ from collections import OrderedDict
 import torch
 import torch.nn as nn
 
+from vllm_omni.lora.request import LoRARequest
 from vllm.config.lora import LoRAConfig
 from vllm.lora.layers import BaseLayerWithLoRA
 from vllm.lora.models import LoRAModel
 from vllm.lora.peft_helper import PEFTHelper
 from vllm.lora.punica_wrapper import get_punica_wrapper
-from vllm.lora.request import LoRARequest
 from vllm.lora.utils import (
     get_adapter_absolute_path,
     get_supported_lora_modules,
