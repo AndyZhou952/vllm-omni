@@ -7,7 +7,6 @@ from collections import OrderedDict
 import torch
 import torch.nn as nn
 
-from vllm.config.lora import LoRAConfig
 from vllm.lora.layers import BaseLayerWithLoRA
 from vllm.lora.models import LoRAModel
 from vllm.lora.peft_helper import PEFTHelper
@@ -19,6 +18,7 @@ from vllm.lora.utils import (
 )
 from vllm.logger import init_logger
 
+from vllm_omni.config.lora import LoRAConfig
 from vllm_omni.diffusion.lora.utils import (
     from_layer_diffusion,
     _match_target_modules,
