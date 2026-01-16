@@ -46,7 +46,7 @@ class DiffusionBaseLinearLayerWithLoRA(BaseLinearLayerWithLoRA):
         # lora_a_stacked[0] shape: (max_loras=1, 1, rank, in_dim)
         # lora_b_stacked[0] shape: (max_loras=1, 1, out_dim, rank)
         A = self.lora_a_stacked[0][0, 0, :, :]  # (rank, in_dim)
-        B = self.lora_b_stacked[0][0, :, :]  # (out_dim, rank)
+        B = self.lora_b_stacked[0][0, 0, :, :]  # (out_dim, rank)
 
         if A.numel() == 0 or B.numel() == 0:
             return output
