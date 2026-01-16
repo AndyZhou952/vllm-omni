@@ -224,11 +224,24 @@ class DiffusionLoRAManager:
                 continue
 
             scale = self._adapter_scales.get(adapter_id, 1.0)
-            scaled_lora_b = lora_weights.lora_b * scale
-            lora_layer.set_lora(index=0, lora_a=lora_weights.lora_a, lora_b=scaled_lora_b)
+            lora_a = lora_weights.lora_a
+            lora_b = lora_weights.lora_b
+            if isinstance(lora_b, tuple):
+                scaled_lora_b = tuple(b * scale for b in lora_b)
+            elif isinstance(lora_b, list):
+                scaled_lora_b = [b * scale for b in lora_b]
+            else:
+                scaled_lora_b = lora_b * scale
+            lora_layer.set_lora(index=0, lora_a=lora_a, lora_b=scaled_lora_b)
+
+            def _shape(value: object) -> object:
+                if isinstance(value, (list, tuple)):
+                    return [v.shape for v in value]
+                return value.shape  # type: ignore[union-attr]
+
             logger.debug(
                 "Activated LoRA for %s: lora_a shape=%s, lora_b shape=%s, scale=%.2f",
-                full_module_name, lora_weights.lora_a.shape, lora_weights.lora_b.shape, scale
+                full_module_name, _shape(lora_a), _shape(lora_b), scale
             )
 
         self._active_adapter_id = adapter_id
