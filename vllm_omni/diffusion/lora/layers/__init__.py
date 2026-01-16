@@ -6,12 +6,10 @@ from .replicated_linear import DiffusionReplicatedLinearWithLoRA
 from .column_parallel_linear import (
     DiffusionColumnParallelLinearWithLoRA,
     DiffusionMergedColumnParallelLinearWithLoRA,
-)
-from .row_parallel_linear import DiffusionRowParallelLinearWithLoRA
-from .qkv_parallel_linear import (
     DiffusionQKVParallelLinearWithLoRA,
     DiffusionMergedQKVParallelLinearWithLoRA,
 )
+from .row_parallel_linear import DiffusionRowParallelLinearWithLoRA
 
 __all__ = [
     "DiffusionBaseLinearLayerWithLoRA",
