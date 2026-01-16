@@ -277,7 +277,7 @@ class OmniDiffusionConfig:
 
     # LoRA parameters
     lora_path: str | None = None
-    static_lora_scale: float = 1.0
+    lora_scale: float = 1.0
 
     output_type: str = "pil"
 

@@ -141,7 +141,8 @@ class GPUWorker:
             device=self.device,
             dtype=self.od_config.dtype,
             max_cached_adapters=1,
-            static_lora_path=self.od_config.lora_path,
+            lora_path=self.od_config.lora_path,
+            lora_scale=self.od_config.lora_scale,
         )
 
     def generate(self, requests: list[OmniDiffusionRequest]) -> DiffusionOutput:
@@ -175,11 +176,10 @@ class GPUWorker:
             self.cache_backend.refresh(self.pipeline, req.num_inference_steps)
 
         # Apply LoRA (if requested)
-        if self.lora_manager is not None:
-            try:
-                self.lora_manager.set_active_adapter(req.lora_request, req.lora_scale)
-            except Exception as e:
-                logger.warning("LoRA activation skipped: %s", e)
+        try:
+            self.lora_manager.set_active_adapter(req.lora_request, req.lora_scale)
+        except Exception as e:
+            logger.warning("LoRA activation skipped: %s", e)
 
         with set_forward_context(vllm_config=self.vllm_config, omni_diffusion_config=self.od_config):
             output = self.pipeline.forward(req)

@@ -41,8 +41,8 @@ class DiffusionLoRAManager:
             device: torch.device,
             dtype: torch.dtype,
             max_cached_adapters: int = 1,
-            static_lora_path: str | None = None,
-            static_lora_scale: float = 1.0,
+            lora_path: str | None = None,
+            lora_scale: float = 1.0,
     ):
         """
         Initialize the DiffusionLoRAManager.
@@ -68,17 +68,17 @@ class DiffusionLoRAManager:
 
         logger.info(
             "Initializing DiffusionLoRAManager: device=%s, dtype=%s, max_cached_adapters=%d, static_lora_path=%s",
-            device, dtype, max_cached_adapters, static_lora_path
+            device, dtype, max_cached_adapters, lora_path
         )
 
-        if static_lora_path is not None:
-            logger.info("Loading static LoRA from %s with scale %.2f", static_lora_path, static_lora_scale)
-            static_request = LoRARequest(
+        if lora_path is not None:
+            logger.info("Loading LoRA during initialization from %s with scale %.2f", lora_path, lora_scale)
+            init_request = LoRARequest(
                 lora_name = 'static',
                 lora_int_id = 1,
-                lora_path = static_lora_path,
+                lora_path = lora_path,
             )
-            self.set_active_adapter(static_request, static_lora_scale)
+            self.set_active_adapter(init_request, lora_scale)
 
     def set_active_adapter(self, lora_request: LoRARequest | None, lora_scale: float = 1.0) -> None:
         """Set the active LoRA adapter for the pipeline.
