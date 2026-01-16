@@ -11,13 +11,13 @@ from typing import Any
 from vllm.config import VllmConfig
 from vllm.inputs.preprocess import InputPreprocessor
 from vllm.logger import init_logger
-from vllm.lora.request import LoRARequest
 from vllm.plugins.io_processors import get_io_processor
 from vllm.sampling_params import SamplingParams
 from vllm.tokenizers import TokenizerLike
 from vllm.v1.engine.exceptions import EngineDeadError
 
 # Internal imports (our code)
+from vllm_omni.lora.request import LoRARequest
 from vllm_omni.config import OmniModelConfig
 from vllm_omni.diffusion.data import DiffusionParallelConfig
 from vllm_omni.distributed.omni_connectors.adapter import try_send_via_connector

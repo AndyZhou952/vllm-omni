@@ -7,7 +7,6 @@ from vllm.config import VllmConfig
 from vllm.inputs import ProcessorInputs, PromptType
 from vllm.inputs.parse import split_enc_dec_inputs
 from vllm.logger import init_logger
-from vllm.lora.request import LoRARequest
 from vllm.multimodal import MULTIMODAL_REGISTRY, MultiModalRegistry
 from vllm.multimodal.inputs import MultiModalFeatureSpec, MultiModalUUIDDict
 from vllm.multimodal.utils import argsort_mm_positions
@@ -18,6 +17,7 @@ from vllm.tokenizers import TokenizerLike
 from vllm.utils import length_from_prompt_token_ids_or_embeds
 from vllm.v1.engine.input_processor import InputProcessor
 
+from vllm_omni.lora.request import LoRARequest
 from vllm_omni.engine import (
     AdditionalInformationEntry,
     AdditionalInformationPayload,

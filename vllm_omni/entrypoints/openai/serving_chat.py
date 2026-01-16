@@ -65,7 +65,6 @@ from vllm.entrypoints.openai.utils import maybe_filter_parallel_tool_calls
 from vllm.entrypoints.utils import should_include_usage
 from vllm.inputs.data import PromptType
 from vllm.logger import init_logger
-from vllm.lora.request import LoRARequest
 from vllm.outputs import RequestOutput
 from vllm.sampling_params import SamplingParams
 from vllm.tokenizers import TokenizerLike
@@ -78,6 +77,7 @@ from vllm.tokenizers.mistral import (
 from vllm.transformers_utils.tokenizer import AnyTokenizer
 from vllm.utils.collection_utils import as_list
 
+from vllm_omni.lora.request import LoRARequest
 from vllm_omni.entrypoints.chat_utils import parse_chat_messages_futures
 from vllm_omni.entrypoints.openai.audio_utils_mixin import AudioMixin
 from vllm_omni.entrypoints.openai.protocol import OmniChatCompletionStreamResponse
