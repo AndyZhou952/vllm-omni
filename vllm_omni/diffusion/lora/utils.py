@@ -35,11 +35,21 @@ def _expand_expected_modules_for_merged_projections(
 ) -> set[str]:
     expanded = set(supported_modules)
 
-    # known patterns: merged projections accept their separate counterparts
-    if "add_kv_proj" in supported_modules:
-        expanded.update(["add_k_proj", "add_v_proj", "add_q_proj"])
-    if "to_qkv" in supported_modules:
-        expanded.update(["to_q", "to_k", "to_v"])
+    # Known packed projections: accept their separate counterparts.
+    packed_expansions: dict[str, list[str]] = {
+        # diffusion: fused QKV
+        "to_qkv": ["to_q", "to_k", "to_v"],
+        "qkv_proj": ["q_proj", "k_proj", "v_proj"],
+        # diffusion: fused added KV (name is legacy; it still outputs QKV)
+        "add_kv_proj": ["add_q_proj", "add_k_proj", "add_v_proj"],
+        # LLM-style fused MLP projections
+        "gate_up_proj": ["gate_proj", "up_proj"],
+        # Z-Image fused MLP projections
+        "w13": ["w1", "w3"],
+    }
+    for packed_name, sub_names in packed_expansions.items():
+        if packed_name in supported_modules:
+            expanded.update(sub_names)
 
     return expanded
 

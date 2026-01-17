@@ -28,32 +28,57 @@ class DiffusionBaseLinearLayerWithLoRA(BaseLinearLayerWithLoRA):
         override: Use simple matmul instead of punica_wrapper.add_lora_linear().
 
         This matches the exact computation in PunicaWrapperGPU.add_lora_linear()
-        for the single-slice, single-LoRA case.
+        for the single-LoRA case. For packed projections (e.g. fused QKV), we
+        apply LoRA per-slice using `output_slices`.
         """
         output = self.base_layer.quant_method.apply(self.base_layer, x, bias)
 
-        original_shape = output.shape
-        x_flat, y_flat = x, output
-        if x.ndim == 3 and output.ndim == 3:
-            x_flat = x.view(-1, x.shape[-1])
-            y_flat = output.view(-1, output.shape[-1])
-
+        if not hasattr(self, "lora_a_stacked") or not hasattr(self, "lora_b_stacked"):
+            return output
         if not self.lora_a_stacked or not self.lora_b_stacked:
             return output
 
-        A = self.lora_a_stacked[0][0, 0, :, :]  # (rank, in_dim)
-        B = self.lora_b_stacked[0][0, 0, :, :]  # (out_dim, rank)
+        # In fully-sharded LoRA mode, vLLM uses an all-gather between shrink and
+        # expand for ColumnParallelLinear variants. This diffusion path doesn't
+        # implement that communication yet.
+        if getattr(self, "lora_config", None) is not None:
+            if self.lora_config.fully_sharded_loras and self.tp_size > 1:
+                raise NotImplementedError(
+                    "Diffusion LoRA apply() does not support fully_sharded_loras "
+                    "with tensor parallelism yet."
+                )
 
-        if A.numel() == 0 or B.numel() == 0:
-            return output
+        original_shape = output.shape
+        x_flat = x.reshape(-1, x.shape[-1])
+        y_flat = output.reshape(-1, output.shape[-1])
 
-        # LoRA shrink & expand as in add_lora_linear()
-        delta = (x_flat @ A.t()) @ B.t()
-        y_flat = y_flat + delta
+        output_slices = getattr(self, "output_slices", None)
+        if output_slices is None:
+            # Fallback: infer slice sizes from the allocated tensors.
+            output_slices = tuple(lora_b.shape[2] for lora_b in self.lora_b_stacked)
 
-        if x.ndim == 3 and output.ndim == 3:
-            output = y_flat.view(original_shape)
-        else:
-            output = y_flat
+        if len(output_slices) != len(self.lora_a_stacked) or len(output_slices) != len(self.lora_b_stacked):
+            raise RuntimeError(
+                "LoRA slice metadata mismatch: "
+                f"output_slices={len(output_slices)}, "
+                f"lora_a_stacked={len(self.lora_a_stacked)}, "
+                f"lora_b_stacked={len(self.lora_b_stacked)}"
+            )
 
-        return output
+        offset = 0
+        for slice_idx, slice_size in enumerate(output_slices):
+            A = self.lora_a_stacked[slice_idx][0, 0, :, :]  # (rank, in_dim)
+            B = self.lora_b_stacked[slice_idx][0, 0, :, :]  # (out_dim, rank)
+
+            if A.numel() == 0 or B.numel() == 0:
+                offset += slice_size
+                continue
+
+            # LoRA shrink & expand as in add_lora_linear():
+            #   buffer = (x @ A.T)
+            #   y += buffer @ B.T
+            delta = (x_flat @ A.t()) @ B.t()
+            y_flat[:, offset : offset + slice_size] = y_flat[:, offset : offset + slice_size] + delta
+            offset += slice_size
+
+        return y_flat.view(original_shape)
