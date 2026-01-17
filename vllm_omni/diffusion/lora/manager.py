@@ -52,6 +52,16 @@ class DiffusionLoRAManager:
         self.device = device
         self.dtype = dtype
 
+        # Cache supported/expected module suffixes once, before any layer
+        # replacement happens. After LoRA layers are injected, the original
+        # LinearBase layers become submodules named "*.base_layer", and calling
+        # vLLM's get_supported_lora_modules() again would incorrectly yield
+        # "base_layer" instead of the real target module suffixes.
+        self._supported_lora_modules = self._compute_supported_lora_modules()
+        self._expected_lora_modules = _expand_expected_modules_for_merged_projections(
+            self._supported_lora_modules
+        )
+
         # LRU-style cache management
         self.max_cached_adapters = max_cached_adapters  # max_cpu_loras
         self._registered_adapters: dict[int, LoRAModel] = {}  # adapter_id -> LoRAModel
@@ -82,6 +92,30 @@ class DiffusionLoRAManager:
                 lora_path = lora_path,
             )
             self.set_active_adapter(init_request, lora_scale)
+
+    def _compute_supported_lora_modules(self) -> set[str]:
+        """Compute supported LoRA module suffixes for this pipeline.
+
+        vLLM's get_supported_lora_modules() returns suffixes for LinearBase
+        modules. After this manager replaces layers with BaseLayerWithLoRA
+        wrappers, those LinearBase modules become nested under ".base_layer",
+        which would cause get_supported_lora_modules() to return "base_layer".
+        To make adapter loading stable across multiple adapters, we also accept
+        suffixes from existing BaseLayerWithLoRA wrappers and drop "base_layer"
+        when appropriate.
+        """
+        supported = set(get_supported_lora_modules(self.pipeline))
+
+        has_lora_wrappers = False
+        for name, module in self.pipeline.named_modules():
+            if isinstance(module, BaseLayerWithLoRA):
+                has_lora_wrappers = True
+                supported.add(name.split(".")[-1])
+
+        if has_lora_wrappers:
+            supported.discard("base_layer")
+
+        return supported
 
     def set_active_adapter(self, lora_request: LoRARequest | None, lora_scale: float = 1.0) -> None:
         """Set the active LoRA adapter for the pipeline.
@@ -119,9 +153,10 @@ class DiffusionLoRAManager:
             lora_request: LoRARequest,
     ) -> tuple[LoRAModel, PEFTHelper]:
 
-        supported_lora_modules = set(get_supported_lora_modules(self.pipeline))
-        expected_lora_modules = _expand_expected_modules_for_merged_projections(supported_lora_modules)
-        logger.debug("Supported LoRA modules: %s", expected_lora_modules)
+        if not self._expected_lora_modules:
+            raise ValueError("No supported LoRA modules found in the diffusion pipeline.")
+
+        logger.debug("Supported LoRA modules: %s", self._expected_lora_modules)
 
         lora_path = get_adapter_absolute_path(lora_request.lora_path)
         logger.debug("Resolved LoRA path: %s", lora_path)
@@ -139,7 +174,7 @@ class DiffusionLoRAManager:
 
         lora_model = LoRAModel.from_local_checkpoint(
             lora_path,
-            expected_lora_modules=expected_lora_modules,
+            expected_lora_modules=self._expected_lora_modules,
             peft_helper=peft_helper,
             lora_model_id=lora_request.lora_int_id,
             device="cpu",  # consistent w/ vllm's behavior
@@ -195,6 +230,12 @@ class DiffusionLoRAManager:
                 continue
 
             for module_name, module in component.named_modules(remove_duplicate=False):
+                # Don't recurse into already-replaced LoRA wrappers. Their
+                # original LinearBase lives under "base_layer", and replacing
+                # that again would nest LoRA wrappers and break execution.
+                if isinstance(module, BaseLayerWithLoRA) or "base_layer" in module_name.split("."):
+                    continue
+
                 full_module_name = f"{component_name}.{module_name}"
                 if full_module_name in self._lora_modules:
                     logger.debug("Layer %s already replaced, skipping", full_module_name)

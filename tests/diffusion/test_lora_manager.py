@@ -6,6 +6,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import torch
+from vllm.lora.utils import get_supported_lora_modules
+from vllm.model_executor.layers.linear import LinearBase
 
 from vllm.lora.lora_weights import LoRALayerWeights
 
@@ -43,6 +45,11 @@ class _DummyLoRALayer:
     def reset_lora(self, index: int):
         assert index == 0
         self.reset_calls += 1
+
+
+class _FakeLinearBase(LinearBase):
+    def __init__(self):
+        torch.nn.Module.__init__(self)
 
 
 def test_diffusion_base_linear_apply_multi_slice():
@@ -104,6 +111,81 @@ def test_diffusion_base_linear_apply_multi_slice():
     delta1 = torch.tensor([[6.0]])
     expected = torch.cat([base_out[:, :2] + delta0, base_out[:, 2:3] + delta1], dim=-1)
     assert torch.allclose(out, expected)
+
+
+def test_lora_manager_supported_modules_are_stable_with_wrapped_layers(monkeypatch):
+    # Simulate a pipeline that already contains LoRA wrappers where the original
+    # LinearBase is nested under ".base_layer".
+    import vllm_omni.diffusion.lora.manager as manager_mod
+
+    class _DummyBaseLayerWithLoRA(torch.nn.Module):
+        def __init__(self, base_layer: torch.nn.Module):
+            super().__init__()
+            self.base_layer = base_layer
+
+    monkeypatch.setattr(manager_mod, "BaseLayerWithLoRA", _DummyBaseLayerWithLoRA)
+
+    pipeline = torch.nn.Module()
+    pipeline.transformer = torch.nn.Module()
+    pipeline.transformer.foo = _DummyBaseLayerWithLoRA(_FakeLinearBase())
+
+    # vLLM helper would see only the nested LinearBase and yield "base_layer".
+    assert get_supported_lora_modules(pipeline) == ["base_layer"]
+
+    manager = DiffusionLoRAManager(
+        pipeline=pipeline,
+        device=torch.device("cpu"),
+        dtype=torch.float32,
+        max_cached_adapters=1,
+    )
+
+    assert "foo" in manager._supported_lora_modules
+    assert "base_layer" not in manager._supported_lora_modules
+
+
+def test_lora_manager_replace_layers_does_not_rewrap_base_layer(monkeypatch):
+    import vllm_omni.diffusion.lora.manager as manager_mod
+
+    class _DummyBaseLayerWithLoRA(torch.nn.Module):
+        def __init__(self, base_layer: torch.nn.Module):
+            super().__init__()
+            self.base_layer = base_layer
+
+    monkeypatch.setattr(manager_mod, "BaseLayerWithLoRA", _DummyBaseLayerWithLoRA)
+
+    def _fake_from_layer_diffusion(*, layer: torch.nn.Module, **_kwargs):
+        if isinstance(layer, _FakeLinearBase):
+            return _DummyBaseLayerWithLoRA(layer)
+        return layer
+
+    replace_calls: list[str] = []
+
+    def _fake_replace_submodule(root: torch.nn.Module, module_name: str, submodule: torch.nn.Module):
+        replace_calls.append(module_name)
+        setattr(root, module_name, submodule)
+
+    monkeypatch.setattr(manager_mod, "from_layer_diffusion", _fake_from_layer_diffusion)
+    monkeypatch.setattr(manager_mod, "replace_submodule", _fake_replace_submodule)
+
+    pipeline = torch.nn.Module()
+    pipeline.transformer = torch.nn.Module()
+    pipeline.transformer.foo = _FakeLinearBase()
+
+    manager = DiffusionLoRAManager(
+        pipeline=pipeline,
+        device=torch.device("cpu"),
+        dtype=torch.float32,
+        max_cached_adapters=1,
+    )
+
+    peft_helper = type("_PH", (), {"r": 1})()
+
+    manager._replace_layers_with_lora(peft_helper)
+    manager._replace_layers_with_lora(peft_helper)
+
+    # Only the top-level layer should have been replaced; nested ".base_layer"
+    # must be skipped to avoid nesting LoRA wrappers.
+    assert replace_calls == ["foo"]
 
 
 def test_lora_manager_activates_fused_lora_on_packed_layer():
@@ -184,4 +266,3 @@ def test_lora_manager_activates_packed_lora_from_sublayers():
     assert torch.allclose(lora_b_list[0], torch.ones((2, rank)) * 3 * 2.0)
     assert torch.allclose(lora_b_list[1], torch.ones((1, rank)) * 4 * 2.0)
     assert torch.allclose(lora_b_list[2], torch.ones((1, rank)) * 4 * 2.0)
-
