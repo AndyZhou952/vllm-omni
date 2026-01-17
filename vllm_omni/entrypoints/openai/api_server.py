@@ -28,7 +28,14 @@ from vllm.entrypoints.openai.api_server import (
     setup_server,
     validate_json_request,
 )
-from vllm.entrypoints.openai.protocol import ChatCompletionRequest, ChatCompletionResponse, ErrorResponse
+from vllm.entrypoints.openai.protocol import (
+    ChatCompletionRequest,
+    ChatCompletionResponse,
+    ErrorResponse,
+    ModelCard,
+    ModelList,
+    ModelPermission,
+)
 from vllm.entrypoints.openai.serving_models import BaseModelPath, LoRAModulePath, OpenAIServingModels
 from vllm.entrypoints.openai.tool_parsers import ToolParserManager
 
@@ -56,6 +63,30 @@ from vllm_omni.entrypoints.openai.serving_chat import OmniOpenAIServingChat
 from vllm_omni.entrypoints.openai.serving_speech import OmniOpenAIServingSpeech
 
 logger = init_logger(__name__)
+
+class _DiffusionServingModels:
+    """Minimal OpenAIServingModels implementation for diffusion-only servers.
+
+    vLLM's /v1/models route expects `app.state.openai_serving_models` to expose
+    `show_available_models()`. In pure diffusion mode we don't initialize the
+    full OpenAIServingModels (it depends on LLM-specific processors), so we
+    provide a lightweight fallback.
+    """
+
+    def __init__(self, base_model_paths: list[BaseModelPath]) -> None:
+        self._base_model_paths = base_model_paths
+
+    async def show_available_models(self) -> ModelList:
+        return ModelList(
+            data=[
+                ModelCard(
+                    id=base_model.name,
+                    root=base_model.model_path,
+                    permission=[ModelPermission()],
+                )
+                for base_model in self._base_model_paths
+            ]
+        )
 
 
 # Server entry points
@@ -282,6 +313,7 @@ async def omni_init_app_state(
         model_name = served_model_names[0] if served_model_names else args.model
         state.vllm_config = None
         state.diffusion_engine = engine_client
+        state.openai_serving_models = _DiffusionServingModels(base_model_paths)
 
         # Use for_diffusion method to create chat handler
         state.openai_serving_chat = OmniOpenAIServingChat.for_diffusion(
