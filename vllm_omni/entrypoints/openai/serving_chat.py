@@ -1878,6 +1878,34 @@ class OmniOpenAIServingChat(OpenAIServingChat, AudioMixin):
             if guidance_scale_2 is not None:
                 gen_kwargs["guidance_scale_2"] = guidance_scale_2
 
+            # Parse per-request LoRA (works for both AsyncOmniDiffusion and AsyncOmni).
+            if lora_body and isinstance(lora_body, dict):
+                try:
+                    lora_name = lora_body.get("name") or lora_body.get(
+                        "lora_name") or lora_body.get("adapter")
+                    lora_path = (
+                        lora_body.get("local_path")
+                        or lora_body.get("path")
+                        or lora_body.get("lora_path")
+                        or lora_body.get("lora_local_path")
+                    )
+                    lora_scale = lora_body.get("scale") or lora_body.get(
+                        "lora_scale")
+                    lora_int_id = (
+                        lora_body.get("int_id")
+                        or lora_body.get("lora_int_id")
+                        or abs(hash((lora_name or "") + (lora_path or "")))
+                        % (2**30)
+                    )
+                    if lora_name and lora_path:
+                        lora_req = LoRARequest(str(lora_name), int(lora_int_id),
+                                               str(lora_path))
+                        gen_kwargs["lora_request"] = lora_req
+                        if lora_scale is not None:
+                            gen_kwargs["lora_scale"] = float(lora_scale)
+                except Exception as e:  # pragma: no cover - safeguard
+                    logger.warning("Failed to parse LoRA request: %s", e)
+
             # Add reference image if provided
             if pil_images:
                 if len(pil_images) == 1:
@@ -1913,29 +1941,6 @@ class OmniOpenAIServingChat(OpenAIServingChat, AudioMixin):
                     return self._create_error_response("No output generated from AsyncOmni")
             else:
                 # AsyncOmniDiffusion: direct call
-                if lora_body and isinstance(lora_body, dict):
-                    try:
-                        lora_name = lora_body.get("name") or lora_body.get("lora_name") or lora_body.get("adapter")
-                        lora_path = (
-                                lora_body.get("local_path")
-                                or lora_body.get("path")
-                                or lora_body.get("lora_path")
-                                or lora_body.get("lora_local_path")
-                        )
-                        lora_scale = lora_body.get("scale") or lora_body.get("lora_scale")
-                        lora_int_id = (
-                                lora_body.get("int_id")
-                                or lora_body.get("lora_int_id")
-                                or abs(hash((lora_name or "") + (lora_path or ""))) % (2 ** 30)
-                        )
-                        if lora_name and lora_path:
-                            lora_req = LoRARequest(str(lora_name), int(lora_int_id), str(lora_path))
-                            gen_kwargs["lora_request"] = lora_req
-                            if lora_scale is not None:
-                                gen_kwargs["lora_scale"] = float(lora_scale)
-                    except Exception as e:  # pragma: no cover - safeguard
-                        logger.warning("Failed to parse LoRA request: %s", e)
-
                 result = await self._diffusion_engine.generate(**gen_kwargs)
             # Extract images from result
             # Handle nested OmniRequestOutput structure where images might be in request_output

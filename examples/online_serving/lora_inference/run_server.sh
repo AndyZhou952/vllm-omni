@@ -8,6 +8,13 @@ echo "Starting vLLM-Omni diffusion server..."
 echo "Model: $MODEL"
 echo "Port: $PORT"
 
-vllm serve "$MODEL" --omni \
-  --port "$PORT"
+if [ -z "${VLLM_BIN:-}" ]; then
+  if command -v vllm-omni >/dev/null 2>&1; then
+    VLLM_BIN="vllm-omni"
+  else
+    VLLM_BIN="vllm"
+  fi
+fi
 
+"$VLLM_BIN" serve "$MODEL" --omni \
+  --port "$PORT"
