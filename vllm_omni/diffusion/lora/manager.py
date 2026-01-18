@@ -38,13 +38,13 @@ class DiffusionLoRAManager:
     """
 
     def __init__(
-            self,
-            pipeline: nn.Module,
-            device: torch.device,
-            dtype: torch.dtype,
-            max_cached_adapters: int = 1,
-            lora_path: str | None = None,
-            lora_scale: float = 1.0,
+        self,
+        pipeline: nn.Module,
+        device: torch.device,
+        dtype: torch.dtype,
+        max_cached_adapters: int = 1,
+        lora_path: str | None = None,
+        lora_scale: float = 1.0,
     ):
         """
         Initialize the DiffusionLoRAManager.
@@ -59,9 +59,7 @@ class DiffusionLoRAManager:
         # vLLM's get_supported_lora_modules() again would incorrectly yield
         # "base_layer" instead of the real target module suffixes.
         self._supported_lora_modules = self._compute_supported_lora_modules()
-        self._expected_lora_modules = _expand_expected_modules_for_merged_projections(
-            self._supported_lora_modules
-        )
+        self._expected_lora_modules = _expand_expected_modules_for_merged_projections(self._supported_lora_modules)
 
         # LRU-style cache management
         self.max_cached_adapters = max_cached_adapters  # max_cpu_loras
@@ -82,7 +80,10 @@ class DiffusionLoRAManager:
 
         logger.info(
             "Initializing DiffusionLoRAManager: device=%s, dtype=%s, max_cached_adapters=%d, static_lora_path=%s",
-            device, dtype, max_cached_adapters, lora_path
+            device,
+            dtype,
+            max_cached_adapters,
+            lora_path,
         )
 
         if lora_path is not None:
@@ -133,8 +134,12 @@ class DiffusionLoRAManager:
         adapter_id = lora_request.lora_int_id
         logger.debug(
             "Setting active adapter: id=%d, name=%s, path=%s, scale=%.2f, cache_size=%d/%d",
-            adapter_id, lora_request.lora_name, lora_request.lora_path, lora_scale,
-            len(self._registered_adapters), self.max_cached_adapters
+            adapter_id,
+            lora_request.lora_name,
+            lora_request.lora_path,
+            lora_scale,
+            len(self._registered_adapters),
+            self.max_cached_adapters,
         )
         if adapter_id not in self._registered_adapters:
             logger.info("Loading new adapter: id=%d, name=%s", adapter_id, lora_request.lora_name)
@@ -150,10 +155,9 @@ class DiffusionLoRAManager:
         self._activate_adapter(adapter_id)
 
     def _load_adapter(
-            self,
-            lora_request: LoRARequest,
+        self,
+        lora_request: LoRARequest,
     ) -> tuple[LoRAModel, PEFTHelper]:
-
         if not self._expected_lora_modules:
             raise ValueError("No supported LoRA modules found in the diffusion pipeline.")
 
@@ -170,7 +174,9 @@ class DiffusionLoRAManager:
 
         logger.info(
             "Loaded PEFT config: r=%d, lora_alpha=%d, target_modules=%s",
-            peft_helper.r, peft_helper.lora_alpha, peft_helper.target_modules
+            peft_helper.r,
+            peft_helper.lora_alpha,
+            peft_helper.target_modules,
         )
 
         lora_model = LoRAModel.from_local_checkpoint(
@@ -187,7 +193,9 @@ class DiffusionLoRAManager:
 
         logger.info(
             "Loaded LoRA model: id=%d, num_modules=%d, modules=%s",
-            lora_model.id, len(lora_model.loras), list(lora_model.loras.keys())
+            lora_model.id,
+            len(lora_model.loras),
+            list(lora_model.loras.keys()),
         )
 
         for lora in lora_model.loras.values():
@@ -537,8 +545,9 @@ class DiffusionLoRAManager:
         # evict if cache full
         self._evict_if_needed()
 
-        logger.debug("Adapter %d added, cache size: %d/%d",
-                     adapter_id, len(self._registered_adapters), self.max_cached_adapters)
+        logger.debug(
+            "Adapter %d added, cache size: %d/%d", adapter_id, len(self._registered_adapters), self.max_cached_adapters
+        )
         return True
 
     def remove_adapter(self, adapter_id: int) -> bool:
@@ -557,8 +566,12 @@ class DiffusionLoRAManager:
         self._adapter_scales.pop(adapter_id, None)
         self._adapter_access_order.pop(adapter_id, None)
         self._pinned_adapters.discard(adapter_id)
-        logger.debug("Adapter %d removed, cache size: %d/%d",
-                     adapter_id, len(self._registered_adapters), self.max_cached_adapters)
+        logger.debug(
+            "Adapter %d removed, cache size: %d/%d",
+            adapter_id,
+            len(self._registered_adapters),
+            self.max_cached_adapters,
+        )
         return True
 
     def list_adapters(self) -> list[int]:

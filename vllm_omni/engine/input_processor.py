@@ -17,7 +17,6 @@ from vllm.tokenizers import TokenizerLike
 from vllm.utils import length_from_prompt_token_ids_or_embeds
 from vllm.v1.engine.input_processor import InputProcessor
 
-from vllm_omni.lora.request import LoRARequest
 from vllm_omni.engine import (
     AdditionalInformationEntry,
     AdditionalInformationPayload,
@@ -25,6 +24,7 @@ from vllm_omni.engine import (
     PromptEmbedsPayload,
 )
 from vllm_omni.inputs.preprocess import OmniInputPreprocessor
+from vllm_omni.lora.request import LoRARequest
 
 logger = init_logger(__name__)
 

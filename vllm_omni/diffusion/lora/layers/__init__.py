@@ -2,13 +2,13 @@
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
 from .base_linear import DiffusionBaseLinearLayerWithLoRA
-from .replicated_linear import DiffusionReplicatedLinearWithLoRA
 from .column_parallel_linear import (
     DiffusionColumnParallelLinearWithLoRA,
     DiffusionMergedColumnParallelLinearWithLoRA,
-    DiffusionQKVParallelLinearWithLoRA,
     DiffusionMergedQKVParallelLinearWithLoRA,
+    DiffusionQKVParallelLinearWithLoRA,
 )
+from .replicated_linear import DiffusionReplicatedLinearWithLoRA
 from .row_parallel_linear import DiffusionRowParallelLinearWithLoRA
 
 __all__ = [

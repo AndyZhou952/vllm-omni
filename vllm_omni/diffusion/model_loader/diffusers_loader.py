@@ -94,9 +94,7 @@ class DiffusersPipelineLoader:
         load_format = self.load_config.load_format
         use_safetensors = False
         index_file = DIFFUSION_MODEL_WEIGHTS_INDEX
-        index_file_with_subfolder = (
-            f"{subfolder}/{index_file}" if subfolder else index_file
-        )
+        index_file_with_subfolder = f"{subfolder}/{index_file}" if subfolder else index_file
 
         # only hf is supported currently
         if load_format == "auto":

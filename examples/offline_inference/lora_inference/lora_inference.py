@@ -33,21 +33,21 @@ def parse_args() -> argparse.Namespace:
         type=str,
         default=None,
         help="Path to LoRA adapter folder to pre-load at initialization (PEFT format). "
-             "Note: pre-loading populates the cache; you still need to pass a lora_request to activate it.",
+        "Note: pre-loading populates the cache; you still need to pass a lora_request to activate it.",
     )
     parser.add_argument(
         "--lora-request-path",
         type=str,
         default=None,
         help="Path to LoRA adapter folder for per-request activation (dynamic LoRA). "
-             "If --lora-request-id is not provided, a stable ID will be derived from this path.",
+        "If --lora-request-id is not provided, a stable ID will be derived from this path.",
     )
     parser.add_argument(
         "--lora-request-id",
         type=int,
         default=None,
         help="Integer ID for the LoRA adapter (for dynamic LoRA). "
-             "If not provided and --lora-request-path is set, will derive a stable ID from the path.",
+        "If not provided and --lora-request-path is set, will derive a stable ID from the path.",
     )
     parser.add_argument(
         "--lora-scale",

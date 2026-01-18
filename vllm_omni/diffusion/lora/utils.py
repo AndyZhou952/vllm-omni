@@ -3,13 +3,10 @@
 
 from __future__ import annotations
 
-from typing import List
-
 import torch.nn as nn
 from transformers import PretrainedConfig
 
 from vllm_omni.config.lora import LoRAConfig
-
 from vllm_omni.diffusion.lora.layers import (
     DiffusionColumnParallelLinearWithLoRA,
     DiffusionMergedColumnParallelLinearWithLoRA,
@@ -19,20 +16,18 @@ from vllm_omni.diffusion.lora.layers import (
     DiffusionRowParallelLinearWithLoRA,
 )
 
+
 def _match_target_modules(module_name: str, target_modules: list[str]) -> bool:
-    """ from vllm/lora/model_manager.py _match_target_modules, helper function
-    """
+    """from vllm/lora/model_manager.py _match_target_modules, helper function"""
     import regex as re
 
     return any(
-        re.match(r".*\.{target_module}$".format(target_module=target_module), module_name)
-        or target_module == module_name
+        re.match(rf".*\.{target_module}$", module_name) or target_module == module_name
         for target_module in target_modules
     )
 
-def _expand_expected_modules_for_merged_projections(
-        supported_modules: set[str]
-) -> set[str]:
+
+def _expand_expected_modules_for_merged_projections(supported_modules: set[str]) -> set[str]:
     expanded = set(supported_modules)
 
     # Known packed projections: accept their separate counterparts.
@@ -53,11 +48,12 @@ def _expand_expected_modules_for_merged_projections(
 
     return expanded
 
+
 def from_layer_diffusion(
     layer: nn.Module,
     max_loras: int,
     lora_config: LoRAConfig,
-    packed_modules_list: List[str],
+    packed_modules_list: list[str],
     model_config: PretrainedConfig | None = None,
 ) -> nn.Module:
     """

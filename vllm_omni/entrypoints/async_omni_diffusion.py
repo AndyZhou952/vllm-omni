@@ -18,11 +18,11 @@ from typing import Any
 from PIL import Image
 from vllm.logger import init_logger
 from vllm.transformers_utils.config import get_hf_file_to_dict
-from vllm_omni.lora.request import LoRARequest
 
 from vllm_omni.diffusion.data import OmniDiffusionConfig, TransformerConfig
 from vllm_omni.diffusion.diffusion_engine import DiffusionEngine
 from vllm_omni.diffusion.request import OmniDiffusionRequest
+from vllm_omni.lora.request import LoRARequest
 from vllm_omni.outputs import OmniRequestOutput
 
 logger = init_logger(__name__)
@@ -281,8 +281,7 @@ class AsyncOmniDiffusion:
         return self._closed
 
     async def remove_lora(self, adapter_id: int) -> bool:
-        """Remove a LoRA
-        """
+        """Remove a LoRA"""
         loop = asyncio.get_event_loop()
         results = await loop.run_in_executor(
             self._executor,
@@ -296,8 +295,7 @@ class AsyncOmniDiffusion:
         return all(results) if isinstance(results, list) else results
 
     async def add_lora(self, lora_request: LoRARequest, lora_scale: float = 1.0) -> bool:
-        """Add a LoRA adapter
-        """
+        """Add a LoRA adapter"""
         loop = asyncio.get_event_loop()
         results = await loop.run_in_executor(
             self._executor,

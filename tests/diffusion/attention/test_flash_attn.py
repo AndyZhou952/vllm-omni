@@ -12,6 +12,8 @@ This script tests two main scenarios:
 import pytest
 import torch
 
+pytest.importorskip("flash_attn", reason="flash_attn is not installed")
+
 from vllm_omni.diffusion.attention.backends.abstract import AttentionMetadata
 from vllm_omni.diffusion.attention.backends.flash_attn import FlashAttentionImpl
 from vllm_omni.diffusion.attention.backends.sdpa import SDPAImpl

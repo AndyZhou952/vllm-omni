@@ -64,6 +64,7 @@ from vllm_omni.entrypoints.openai.serving_speech import OmniOpenAIServingSpeech
 
 logger = init_logger(__name__)
 
+
 class _DiffusionServingModels:
     """Minimal OpenAIServingModels implementation for diffusion-only servers.
 

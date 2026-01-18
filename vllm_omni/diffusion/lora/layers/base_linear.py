@@ -84,8 +84,7 @@ class DiffusionBaseLinearLayerWithLoRA(BaseLinearLayerWithLoRA):
         if getattr(self, "lora_config", None) is not None:
             if self.lora_config.fully_sharded_loras and self.tp_size > 1:
                 raise NotImplementedError(
-                    "Diffusion LoRA apply() does not support fully_sharded_loras "
-                    "with tensor parallelism yet."
+                    "Diffusion LoRA apply() does not support fully_sharded_loras with tensor parallelism yet."
                 )
 
         original_shape = output.shape

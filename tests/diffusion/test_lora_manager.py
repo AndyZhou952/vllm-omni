@@ -6,10 +6,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import torch
+from vllm.lora.lora_weights import LoRALayerWeights
 from vllm.lora.utils import get_supported_lora_modules
 from vllm.model_executor.layers.linear import LinearBase
-
-from vllm.lora.lora_weights import LoRALayerWeights
 
 from vllm_omni.diffusion.lora.layers.base_linear import DiffusionBaseLinearLayerWithLoRA
 from vllm_omni.diffusion.lora.manager import DiffusionLoRAManager
@@ -35,7 +34,9 @@ class _DummyLoRALayer:
     def __init__(self, n_slices: int, output_slices: tuple[int, ...]):
         self.n_slices = n_slices
         self.output_slices = output_slices
-        self.set_calls: list[tuple[list[torch.Tensor | None] | torch.Tensor, list[torch.Tensor | None] | torch.Tensor]] = []
+        self.set_calls: list[
+            tuple[list[torch.Tensor | None] | torch.Tensor, list[torch.Tensor | None] | torch.Tensor]
+        ] = []
         self.reset_calls: int = 0
 
     def set_lora(self, index: int, lora_a, lora_b):
@@ -60,7 +61,6 @@ def test_diffusion_base_linear_apply_multi_slice():
 
     in_dim = 3
     out_slices = (2, 1)
-    out_dim = sum(out_slices)
     rank = 2
 
     # Base weight: identity-ish mapping to make base output easy to reason about.
@@ -209,7 +209,17 @@ def test_lora_manager_activates_fused_lora_on_packed_layer():
         lora_a=A,
         lora_b=B,
     )
-    manager._registered_adapters = {7: type("LM", (), {"id": 7, "loras": {"transformer.blocks.0.attn.to_qkv": lora}, "get_lora": lambda self, k: self.loras.get(k)})()}
+    manager._registered_adapters = {
+        7: type(
+            "LM",
+            (),
+            {
+                "id": 7,
+                "loras": {"transformer.blocks.0.attn.to_qkv": lora},
+                "get_lora": lambda self, k: self.loras.get(k),
+            },
+        )()
+    }
     manager._adapter_scales = {7: 0.5}
 
     manager._activate_adapter(7)
@@ -250,7 +260,9 @@ def test_lora_manager_activates_packed_lora_from_sublayers():
             lora_b=torch.ones((out_dim, rank)) * (3 if name == "to_q" else 4),
         )
 
-    manager._registered_adapters = {1: type("LM", (), {"id": 1, "loras": loras, "get_lora": lambda self, k: self.loras.get(k)})()}
+    manager._registered_adapters = {
+        1: type("LM", (), {"id": 1, "loras": loras, "get_lora": lambda self, k: self.loras.get(k)})()
+    }
     manager._adapter_scales = {1: 2.0}
 
     manager._activate_adapter(1)
