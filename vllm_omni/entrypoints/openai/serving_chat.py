@@ -77,11 +77,12 @@ from vllm.tokenizers.mistral import (
 from vllm.transformers_utils.tokenizer import AnyTokenizer
 from vllm.utils.collection_utils import as_list
 
-from vllm_omni.lora.request import LoRARequest
 from vllm_omni.entrypoints.chat_utils import parse_chat_messages_futures
 from vllm_omni.entrypoints.openai.audio_utils_mixin import AudioMixin
 from vllm_omni.entrypoints.openai.protocol import OmniChatCompletionStreamResponse
 from vllm_omni.entrypoints.openai.protocol.audio import AudioResponse, CreateAudio
+from vllm_omni.lora.request import LoRARequest
+from vllm_omni.lora.utils import stable_lora_int_id
 from vllm_omni.outputs import OmniRequestOutput
 
 if TYPE_CHECKING:
@@ -1881,25 +1882,21 @@ class OmniOpenAIServingChat(OpenAIServingChat, AudioMixin):
             # Parse per-request LoRA (works for both AsyncOmniDiffusion and AsyncOmni).
             if lora_body and isinstance(lora_body, dict):
                 try:
-                    lora_name = lora_body.get("name") or lora_body.get(
-                        "lora_name") or lora_body.get("adapter")
+                    lora_name = lora_body.get("name") or lora_body.get("lora_name") or lora_body.get("adapter")
                     lora_path = (
                         lora_body.get("local_path")
                         or lora_body.get("path")
                         or lora_body.get("lora_path")
                         or lora_body.get("lora_local_path")
                     )
-                    lora_scale = lora_body.get("scale") or lora_body.get(
-                        "lora_scale")
-                    lora_int_id = (
-                        lora_body.get("int_id")
-                        or lora_body.get("lora_int_id")
-                        or abs(hash((lora_name or "") + (lora_path or "")))
-                        % (2**30)
-                    )
+                    lora_scale = lora_body.get("scale") or lora_body.get("lora_scale")
+                    lora_int_id = lora_body.get("int_id")
+                    if lora_int_id is None:
+                        lora_int_id = lora_body.get("lora_int_id")
+                    if lora_int_id is None and lora_path:
+                        lora_int_id = stable_lora_int_id(str(lora_path))
                     if lora_name and lora_path:
-                        lora_req = LoRARequest(str(lora_name), int(lora_int_id),
-                                               str(lora_path))
+                        lora_req = LoRARequest(str(lora_name), int(lora_int_id), str(lora_path))
                         gen_kwargs["lora_request"] = lora_req
                         if lora_scale is not None:
                             gen_kwargs["lora_scale"] = float(lora_scale)

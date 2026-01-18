@@ -227,10 +227,13 @@ class OmniBase:
                 if kwargs.get("lora_path") is not None:
                     if not hasattr(cfg.engine_args, "lora_path") or cfg.engine_args.lora_path is None:
                         cfg.engine_args.lora_path = kwargs["lora_path"]
-                if kwargs.get("static_lora_scale") is not None:
-                    if not hasattr(cfg.engine_args,
-                                   "static_lora_scale") or cfg.engine_args.static_lora_scale is None:
-                        cfg.engine_args.static_lora_scale = kwargs["static_lora_scale"]
+                lora_scale = kwargs.get("lora_scale")
+                if lora_scale is None:
+                    # Backwards compatibility for older callers.
+                    lora_scale = kwargs.get("static_lora_scale")
+                if lora_scale is not None:
+                    if not hasattr(cfg.engine_args, "lora_scale") or cfg.engine_args.lora_scale is None:
+                        cfg.engine_args.lora_scale = lora_scale
             except Exception as e:
                 logger.warning("Failed to inject LoRA config for stage: %s", e)
 

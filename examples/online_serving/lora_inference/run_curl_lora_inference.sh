@@ -7,7 +7,7 @@ PROMPT="${PROMPT:-A piece of cheesecake}"
 LORA_PATH="${LORA_PATH:-}"
 LORA_NAME="${LORA_NAME:-lora}"
 LORA_SCALE="${LORA_SCALE:-1.0}"
-LORA_INT_ID="${LORA_INT_ID:-1}"
+LORA_INT_ID="${LORA_INT_ID:-}"
 
 HEIGHT="${HEIGHT:-1024}"
 WIDTH="${WIDTH:-1024}"
@@ -25,8 +25,13 @@ fi
 echo "Generating image with LoRA..."
 echo "Server: $SERVER"
 echo "Prompt: $PROMPT"
-echo "LoRA: name=$LORA_NAME id=$LORA_INT_ID scale=$LORA_SCALE path=$LORA_PATH"
+echo "LoRA: name=$LORA_NAME id=${LORA_INT_ID:-auto} scale=$LORA_SCALE path=$LORA_PATH"
 echo "Output: $OUTPUT"
+
+LORA_INT_ID_FIELD=""
+if [ -n "$LORA_INT_ID" ]; then
+  LORA_INT_ID_FIELD=", \"int_id\": $LORA_INT_ID"
+fi
 
 curl -s "$SERVER/v1/chat/completions" \
   -H "Content-Type: application/json" \
@@ -42,8 +47,7 @@ curl -s "$SERVER/v1/chat/completions" \
       \"lora\": {
         \"name\": \"$LORA_NAME\",
         \"local_path\": \"$LORA_PATH\",
-        \"scale\": $LORA_SCALE,
-        \"int_id\": $LORA_INT_ID
+        \"scale\": $LORA_SCALE$LORA_INT_ID_FIELD
       }
     }
   }" | jq -r '.choices[0].message.content[0].image_url.url' | sed 's/^data:image[^,]*,\s*//' | base64 -d > "$OUTPUT"
@@ -55,4 +59,3 @@ else
   echo "Failed to generate image"
   exit 1
 fi
-

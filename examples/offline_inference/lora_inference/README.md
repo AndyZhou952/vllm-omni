@@ -29,7 +29,7 @@ python -m examples.offline_inference.lora_inference.lora_inference \
     --output output_preloaded.png
 ```
 
-**Note**: When using `--lora-path`, the adapter is loaded at init time with ID 1. To use it in the request, you still need to provide `--lora-request-id 1` (or it will be deactivated).
+**Note**: When using `--lora-path`, the adapter is loaded at init time with a stable ID derived from the adapter path. This example activates it automatically for the request.
 
 ### Per-request LoRA (via --lora-request-path)
 
@@ -39,7 +39,6 @@ Load a LoRA adapter on-demand for each request:
 python -m examples.offline_inference.lora_inference.lora_inference \
     --prompt "A piece of cheesecake" \
     --lora-request-path /path/to/lora/ \
-    --lora-request-id 1 \
     --lora-scale 1.0 \
     --num_inference_steps 50 \
     --height 1024 \
@@ -64,9 +63,9 @@ python -m examples.offline_inference.lora_inference.lora_inference \
 
 ### LoRA Parameters
 
-- `--lora-path`: Path to LoRA adapter folder to pre-load at initialization (loads into cache with ID 1)
+- `--lora-path`: Path to LoRA adapter folder to pre-load at initialization (loads into cache with a stable ID derived from the path)
 - `--lora-request-path`: Path to LoRA adapter folder for per-request loading
-- `--lora-request-id`: Integer ID for the LoRA adapter (required for per-request LoRA). If not provided and `--lora-request-path` is set, will use hash of path.
+- `--lora-request-id`: Integer ID for the LoRA adapter (optional). If not provided and `--lora-request-path` is set, will derive a stable ID from the path.
 - `--lora-scale`: Scale factor for LoRA weights (default: 1.0). Higher values increase the influence of the LoRA adapter.
 
 ### Standard Parameters
@@ -82,7 +81,7 @@ python -m examples.offline_inference.lora_inference.lora_inference \
 
 All LoRA adapters are handled uniformly:
 
-1. **Initialization**: If `--lora-path` is provided, the adapter is loaded into cache with ID 1
+1. **Initialization**: If `--lora-path` is provided, the adapter is loaded into cache with a stable ID derived from the adapter path
 2. **Per-request**: If `--lora-request-path` is provided, the adapter is loaded/activated for that request
 3. **No LoRA**: If no LoRA request is provided (`req.lora_request` is None), all adapters are deactivated
 

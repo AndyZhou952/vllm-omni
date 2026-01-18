@@ -9,3 +9,5 @@ try:
 except ModuleNotFoundError:  # pragma: no cover
     # vLLM older versions
     from vllm.lora.config import LoRAConfig  # type: ignore
+
+__all__ = ["LoRAConfig"]

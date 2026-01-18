@@ -6,7 +6,7 @@ from collections import OrderedDict
 
 import torch
 import torch.nn as nn
-
+from vllm.logger import init_logger
 from vllm.lora.layers import BaseLayerWithLoRA
 from vllm.lora.lora_weights import LoRALayerWeights, PackedLoRALayerWeights
 from vllm.lora.models import LoRAModel
@@ -17,14 +17,15 @@ from vllm.lora.utils import (
     get_supported_lora_modules,
     replace_submodule,
 )
-from vllm.logger import init_logger
 from vllm.model_executor.layers.linear import MergedColumnParallelLinear, QKVParallelLinear
 
 from vllm_omni.config.lora import LoRAConfig
 from vllm_omni.diffusion.lora.utils import (
-    from_layer_diffusion,
     _expand_expected_modules_for_merged_projections,
+    _match_target_modules,
+    from_layer_diffusion,
 )
+from vllm_omni.lora.utils import stable_lora_int_id
 
 logger = init_logger(__name__)
 
@@ -87,9 +88,9 @@ class DiffusionLoRAManager:
         if lora_path is not None:
             logger.info("Loading LoRA during initialization from %s with scale %.2f", lora_path, lora_scale)
             init_request = LoRARequest(
-                lora_name = 'static',
-                lora_int_id = 1,
-                lora_path = lora_path,
+                lora_name="static",
+                lora_int_id=stable_lora_int_id(lora_path),
+                lora_path=lora_path,
             )
             self.set_active_adapter(init_request, lora_scale)
 
@@ -202,16 +203,33 @@ class DiffusionLoRAManager:
         `packed_modules_list` length to decide between single-slice vs packed
         LoRA layer implementations.
         """
-        if type(module) is QKVParallelLinear:
+        if isinstance(module, QKVParallelLinear):
             # Treat diffusion QKV as a 3-slice packed projection by default.
             return ["q", "k", "v"]
-        if type(module) is MergedColumnParallelLinear:
+        if isinstance(module, MergedColumnParallelLinear):
             # 2-slice packed projection (e.g. fused MLP projections).
             return ["0", "1"]
         return []
 
     def _replace_layers_with_lora(self, peft_helper: PEFTHelper) -> None:
         self._ensure_max_lora_rank(peft_helper.r)
+
+        target_modules = getattr(peft_helper, "target_modules", None)
+        target_modules_list: list[str] | None = None
+        target_modules_pattern: str | None = None
+        if isinstance(target_modules, str) and target_modules:
+            target_modules_pattern = target_modules
+        elif isinstance(target_modules, list) and target_modules:
+            target_modules_list = target_modules
+
+        def _matches_target(module_name: str) -> bool:
+            if target_modules_pattern is not None:
+                import regex as re
+
+                return re.search(target_modules_pattern, module_name) is not None
+            if target_modules_list is None:
+                return True
+            return _match_target_modules(module_name, target_modules_list)
 
         # dummy lora config
         lora_config = LoRAConfig(
@@ -241,11 +259,30 @@ class DiffusionLoRAManager:
                     logger.debug("Layer %s already replaced, skipping", full_module_name)
                     continue
 
+                packed_modules_list = self._get_packed_modules_list(module)
+                if target_modules_pattern is not None or target_modules_list is not None:
+                    should_replace = _matches_target(full_module_name)
+                    if not should_replace and len(packed_modules_list) > 1:
+                        prefix, _, packed_suffix = full_module_name.rpartition(".")
+                        for sub_suffixes in self._packed_sublayer_suffix_candidates(
+                            packed_suffix, len(packed_modules_list)
+                        ):
+                            for sub_suffix in sub_suffixes:
+                                sub_full_name = f"{prefix}.{sub_suffix}" if prefix else sub_suffix
+                                if _matches_target(sub_full_name):
+                                    should_replace = True
+                                    break
+                            if should_replace:
+                                break
+
+                    if not should_replace:
+                        continue
+
                 lora_layer = from_layer_diffusion(
                     layer=module,
                     max_loras=1,
                     lora_config=lora_config,
-                    packed_modules_list=self._get_packed_modules_list(module),
+                    packed_modules_list=packed_modules_list,
                     model_config=None,
                 )
 
@@ -291,7 +328,11 @@ class DiffusionLoRAManager:
             self._active_adapter_id = None
             self._activate_adapter(active_id)
 
-    def _get_lora_weights(self, lora_model: LoRAModel, full_module_name: str) -> LoRALayerWeights | PackedLoRALayerWeights | None:
+    def _get_lora_weights(
+        self,
+        lora_model: LoRAModel,
+        full_module_name: str,
+    ) -> LoRALayerWeights | PackedLoRALayerWeights | None:
         """Best-effort lookup for LoRA weights by name.
 
         Tries:

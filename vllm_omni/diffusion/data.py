@@ -444,6 +444,14 @@ class OmniDiffusionConfig:
 
     @classmethod
     def from_kwargs(cls, **kwargs: Any) -> "OmniDiffusionConfig":
+        # Backwards-compatibility: older callers may use a diffusion-specific
+        # "static_lora_scale" kwarg. Normalize it to the canonical "lora_scale"
+        # before constructing the dataclass to avoid TypeError on unknown fields.
+        if "static_lora_scale" in kwargs:
+            if "lora_scale" not in kwargs:
+                kwargs["lora_scale"] = kwargs["static_lora_scale"]
+            kwargs.pop("static_lora_scale", None)
+
         # Check environment variable as fallback for cache_backend
         # Support both old DIFFUSION_CACHE_ADAPTER and new DIFFUSION_CACHE_BACKEND for backwards compatibility
         if "cache_backend" not in kwargs:

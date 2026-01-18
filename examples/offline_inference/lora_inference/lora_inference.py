@@ -4,12 +4,14 @@
 import argparse
 from pathlib import Path
 
-from vllm_omni.lora.request import LoRARequest
 from vllm_omni.entrypoints.omni import Omni
+from vllm_omni.lora.request import LoRARequest
+from vllm_omni.lora.utils import stable_lora_int_id
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Generate images with LoRA adapters.")
-    parser.add_argument("--model", default="stabilityai/stable-diffusion-3.5-medium", help="Text prompt for image generation.")
+    parser.add_argument("--model", default="stabilityai/stable-diffusion-3.5-medium", help="Model name or path.")
     parser.add_argument("--prompt", required=True, help="Text prompt for image generation.")
     parser.add_argument("--seed", type=int, default=42, help="Random seed for deterministic results.")
     parser.add_argument("--height", type=int, default=1024, help="Height of generated image.")
@@ -30,22 +32,22 @@ def parse_args() -> argparse.Namespace:
         "--lora-path",
         type=str,
         default=None,
-        help="Path to static LoRA adapter (loaded at initialization). "
-             "If provided, this LoRA will be active for all requests.",
+        help="Path to LoRA adapter folder to pre-load at initialization (PEFT format). "
+             "Note: pre-loading populates the cache; you still need to pass a lora_request to activate it.",
     )
     parser.add_argument(
         "--lora-request-path",
         type=str,
         default=None,
-        help="Path to LoRA adapter for per-request loading (dynamic LoRA). "
-             "Requires --lora-request-id to be set.",
+        help="Path to LoRA adapter folder for per-request activation (dynamic LoRA). "
+             "If --lora-request-id is not provided, a stable ID will be derived from this path.",
     )
     parser.add_argument(
         "--lora-request-id",
         type=int,
         default=None,
         help="Integer ID for the LoRA adapter (for dynamic LoRA). "
-             "If not provided and --lora-request-path is set, will use hash of path.",
+             "If not provided and --lora-request-path is set, will derive a stable ID from the path.",
     )
     parser.add_argument(
         "--lora-scale",
@@ -72,7 +74,7 @@ def main():
     lora_request = None
     if args.lora_request_path:
         if args.lora_request_id is None:
-            lora_request_id = abs(hash(args.lora_request_path)) % (2 ** 30)
+            lora_request_id = stable_lora_int_id(args.lora_request_path)
         else:
             lora_request_id = args.lora_request_id
 
@@ -85,11 +87,13 @@ def main():
         print(f"Using per-request LoRA: name={lora_name}, id={lora_request_id}, scale={args.lora_scale}")
     elif args.lora_path:
         # pre-loaded LoRA
+        lora_request_id = stable_lora_int_id(args.lora_path)
         lora_request = LoRARequest(
             lora_name="preloaded",
-            lora_int_id=1,
+            lora_int_id=lora_request_id,
             lora_path=args.lora_path,
         )
+        print(f"Activating pre-loaded LoRA: id={lora_request_id}, scale={args.lora_scale}")
 
     gen_kwargs = {
         "prompt": args.prompt,

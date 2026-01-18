@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import torch
-
 from vllm.lora.layers.base_linear import BaseLinearLayerWithLoRA
 
 
@@ -23,6 +22,43 @@ class DiffusionBaseLinearLayerWithLoRA(BaseLinearLayerWithLoRA):
     is inherited from vLLM's BaseLinearLayerWithLoRA.
     """
 
+    def create_lora_weights(
+        self,
+        max_loras: int,
+        lora_config,
+        model_config=None,
+    ) -> None:
+        super().create_lora_weights(max_loras, lora_config, model_config)
+        n_slices = getattr(self, "n_slices", 1)
+        self._diffusion_lora_active_slices = (False,) * int(n_slices)
+
+    def reset_lora(self, index: int):
+        super().reset_lora(index)
+        n_slices = getattr(self, "n_slices", 1)
+        self._diffusion_lora_active_slices = (False,) * int(n_slices)
+
+    def set_lora(
+        self,
+        index: int,
+        lora_a: torch.Tensor | list[torch.Tensor | None],
+        lora_b: torch.Tensor | list[torch.Tensor | None],
+    ):
+        super().set_lora(index, lora_a, lora_b)  # type: ignore[arg-type]
+
+        n_slices = getattr(self, "n_slices", 1)
+        if isinstance(lora_a, list) or isinstance(lora_b, list):
+            assert isinstance(lora_a, list)
+            assert isinstance(lora_b, list)
+            active_slices = []
+            for a_i, b_i in zip(lora_a[:n_slices], lora_b[:n_slices]):
+                active_slices.append(a_i is not None and b_i is not None)
+            if len(active_slices) < n_slices:
+                active_slices.extend([False] * (n_slices - len(active_slices)))
+            self._diffusion_lora_active_slices = tuple(active_slices)
+        else:
+            # Single-slice layer.
+            self._diffusion_lora_active_slices = (True,)
+
     def apply(self, x: torch.Tensor, bias: torch.Tensor | None = None) -> torch.Tensor:
         """
         override: Use simple matmul instead of punica_wrapper.add_lora_linear().
@@ -36,6 +72,10 @@ class DiffusionBaseLinearLayerWithLoRA(BaseLinearLayerWithLoRA):
         if not hasattr(self, "lora_a_stacked") or not hasattr(self, "lora_b_stacked"):
             return output
         if not self.lora_a_stacked or not self.lora_b_stacked:
+            return output
+        # Fast path: if no LoRA is active for this layer, skip matmuls.
+        active_slices = getattr(self, "_diffusion_lora_active_slices", None)
+        if active_slices is not None and not any(active_slices):
             return output
 
         # In fully-sharded LoRA mode, vLLM uses an all-gather between shrink and
@@ -67,6 +107,10 @@ class DiffusionBaseLinearLayerWithLoRA(BaseLinearLayerWithLoRA):
 
         offset = 0
         for slice_idx, slice_size in enumerate(output_slices):
+            if active_slices is not None and slice_idx < len(active_slices) and not active_slices[slice_idx]:
+                offset += slice_size
+                continue
+
             A = self.lora_a_stacked[slice_idx][0, 0, :, :]  # (rank, in_dim)
             B = self.lora_b_stacked[slice_idx][0, 0, :, :]  # (out_dim, rank)
 

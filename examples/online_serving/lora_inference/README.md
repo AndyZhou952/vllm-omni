@@ -3,6 +3,7 @@
 This example shows how to use **per-request LoRA** with vLLM-Omni diffusion models via the OpenAI-compatible Chat Completions API.
 
 > Note: The LoRA adapter path must be readable on the **server** machine (usually a local path or a mounted directory).
+> Note: This example uses `/v1/chat/completions`. LoRA payloads for other OpenAI endpoints are not implemented here.
 
 ## Start Server
 
@@ -25,7 +26,8 @@ export SERVER=http://localhost:8091
 export PROMPT="A piece of cheesecake"
 export LORA_NAME=my_lora
 export LORA_SCALE=1.0
-export LORA_INT_ID=1
+# Optional: if omitted, the server derives a stable id from LORA_PATH.
+# export LORA_INT_ID=123
 
 bash run_curl_lora_inference.sh
 ```
@@ -50,4 +52,3 @@ lora_adapter/
 ├── adapter_config.json
 └── adapter_model.safetensors
 ```
-

@@ -30,8 +30,8 @@ from vllm_omni.diffusion.distributed.parallel_state import (
 from vllm_omni.diffusion.forward_context import set_forward_context
 from vllm_omni.diffusion.lora.manager import DiffusionLoRAManager
 from vllm_omni.diffusion.request import OmniDiffusionRequest
-from vllm_omni.lora.request import LoRARequest
 from vllm_omni.diffusion.worker.gpu_diffusion_model_runner import GPUDiffusionModelRunner
+from vllm_omni.lora.request import LoRARequest
 
 logger = init_logger(__name__)
 
@@ -132,9 +132,30 @@ class GPUDiffusionWorker:
         assert self.model_runner is not None, "Model runner not initialized"
         if self.lora_manager is not None and reqs:
             req = reqs[0]
+
+            if len(reqs) > 1:
+                # This worker (and the current diffusion model runner) applies
+                # a single LoRA to the whole batch. Reject inconsistent LoRA
+                # settings to avoid silently applying the wrong adapter.
+                def _lora_key(r: OmniDiffusionRequest):
+                    if r.lora_request is None:
+                        return None
+                    lr = r.lora_request
+                    return (lr.lora_name, lr.lora_int_id, lr.lora_path, lr.tensorizer_config_dict)
+
+                key0 = _lora_key(req)
+                scale0 = req.lora_scale if key0 is not None else None
+                for other in reqs[1:]:
+                    if _lora_key(other) != key0:
+                        raise ValueError("All requests in a diffusion batch must share the same LoRARequest.")
+                    if key0 is not None and other.lora_scale != scale0:
+                        raise ValueError("All requests in a diffusion batch must share the same lora_scale.")
+
             try:
                 self.lora_manager.set_active_adapter(req.lora_request, req.lora_scale)
             except Exception as exc:
+                if req.lora_request is not None:
+                    raise
                 logger.warning("LoRA activation skipped: %s", exc)
         return self.model_runner.execute_model(reqs)
 

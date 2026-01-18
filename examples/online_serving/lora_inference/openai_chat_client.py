@@ -92,7 +92,12 @@ def main() -> None:
     parser.add_argument("--lora-path", default=None, help="Server-local LoRA adapter folder (PEFT format)")
     parser.add_argument("--lora-name", default=None, help="LoRA name (optional)")
     parser.add_argument("--lora-scale", type=float, default=1.0, help="LoRA scale")
-    parser.add_argument("--lora-int-id", type=int, default=1, help="LoRA integer id (cache key)")
+    parser.add_argument(
+        "--lora-int-id",
+        type=int,
+        default=None,
+        help="LoRA integer id (cache key). If omitted, the server derives a stable id from lora_path.",
+    )
 
     args = parser.parse_args()
 
@@ -117,4 +122,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
