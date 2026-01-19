@@ -1889,7 +1889,10 @@ class OmniOpenAIServingChat(OpenAIServingChat, AudioMixin):
                         or lora_body.get("lora_path")
                         or lora_body.get("lora_local_path")
                     )
-                    lora_scale = lora_body.get("scale") or lora_body.get("lora_scale")
+                    # using "or" directly here may be buggy if `scale=0`
+                    lora_scale = lora_body.get("scale")
+                    if lora_scale is None:
+                        lora_scale = lora_body.get("lora_scale")
                     lora_int_id = lora_body.get("int_id")
                     if lora_int_id is None:
                         lora_int_id = lora_body.get("lora_int_id")
