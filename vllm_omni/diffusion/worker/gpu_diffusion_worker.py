@@ -29,6 +29,7 @@ from vllm_omni.diffusion.distributed.parallel_state import (
 )
 from vllm_omni.diffusion.forward_context import set_forward_context
 from vllm_omni.diffusion.lora.manager import DiffusionLoRAManager
+from vllm_omni.diffusion.profiler import CurrentProfiler
 from vllm_omni.diffusion.request import OmniDiffusionRequest
 from vllm_omni.diffusion.worker.gpu_diffusion_model_runner import GPUDiffusionModelRunner
 from vllm_omni.lora.request import LoRARequest
@@ -126,6 +127,16 @@ class GPUDiffusionWorker:
     def generate(self, requests: list[OmniDiffusionRequest]) -> DiffusionOutput:
         """Generate output for the given requests."""
         return self.execute_model(requests, self.od_config)
+
+    @classmethod
+    def start_profile(cls, trace_path_template: str) -> str:
+        """Start profiling for this GPU worker."""
+        return CurrentProfiler.start(trace_path_template)
+
+    @classmethod
+    def stop_profile(cls) -> dict | None:
+        """Stop profiling and return the result dictionary."""
+        return CurrentProfiler.stop()
 
     def execute_model(self, reqs: list[OmniDiffusionRequest], od_config: OmniDiffusionConfig) -> DiffusionOutput:
         """Execute a forward pass by delegating to the model runner."""
