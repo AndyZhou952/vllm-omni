@@ -80,6 +80,8 @@ from vllm_omni.entrypoints.openai.protocol.images import (
 )
 from vllm_omni.entrypoints.openai.serving_chat import OmniOpenAIServingChat
 from vllm_omni.entrypoints.openai.serving_speech import OmniOpenAIServingSpeech
+from vllm_omni.lora.request import LoRARequest
+from vllm_omni.lora.utils import stable_lora_int_id
 
 logger = init_logger(__name__)
 
@@ -847,6 +849,40 @@ async def generate_images(request: ImageGenerationRequest, raw_request: Request)
             "prompt": request.prompt,
             "num_outputs_per_prompt": request.n,
         }
+
+        # Parse per-request LoRA (compatible with chat's extra_body.lora shape).
+        if request.lora is not None:
+            if not isinstance(request.lora, dict):
+                raise HTTPException(
+                    status_code=HTTPStatus.BAD_REQUEST.value,
+                    detail="Invalid lora field: expected an object.",
+                )
+            lora_body = request.lora
+            lora_name = lora_body.get("name") or lora_body.get("lora_name") or lora_body.get("adapter")
+            lora_path = (
+                lora_body.get("local_path")
+                or lora_body.get("path")
+                or lora_body.get("lora_path")
+                or lora_body.get("lora_local_path")
+            )
+            lora_scale = lora_body.get("scale")
+            if lora_scale is None:
+                lora_scale = lora_body.get("lora_scale")
+            lora_int_id = lora_body.get("int_id")
+            if lora_int_id is None:
+                lora_int_id = lora_body.get("lora_int_id")
+            if lora_int_id is None and lora_path:
+                lora_int_id = stable_lora_int_id(str(lora_path))
+
+            if not lora_name or not lora_path:
+                raise HTTPException(
+                    status_code=HTTPStatus.BAD_REQUEST.value,
+                    detail="Invalid lora object: both name and path are required.",
+                )
+
+            gen_params["lora_request"] = LoRARequest(str(lora_name), int(lora_int_id), str(lora_path))
+            if lora_scale is not None:
+                gen_params["lora_scale"] = float(lora_scale)
 
         # Parse and add size if provided
         if request.size:
