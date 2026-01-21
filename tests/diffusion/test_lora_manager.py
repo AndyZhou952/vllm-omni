@@ -201,7 +201,7 @@ def test_lora_manager_activates_fused_lora_on_packed_layer():
 
     rank = 2
     A = torch.ones((rank, 4))
-    B = torch.arange(0, sum(packed_layer.output_slices) * rank, dtype=torch.float32).view(-1, rank)
+    B = torch.arange(0, sum(packed_layer.output_slices) * rank, dtype=torch.bfloat16).view(-1, rank)
     lora = LoRALayerWeights(
         module_name="transformer.blocks.0.attn.to_qkv",
         rank=rank,
