@@ -21,6 +21,10 @@ os.environ["VLLM_TEST_CLEAN_GPU_MEMORY"] = "1"
 
 
 models = ["Tongyi-MAI/Z-Image-Turbo", "riverclouds/qwen_image_random"]
+model_override = os.environ.get("VLLM_OMNI_E2E_T2I_MODEL")
+if model_override:
+    models = [model_override]
+real_lora_dir_override = os.environ.get("VLLM_OMNI_E2E_T2I_LORA_DIR")
 
 # NPU still can't run Tongyi-MAI/Z-Image-Turbo properly
 # Modelscope can't find riverclouds/qwen_image_random
@@ -109,13 +113,14 @@ def test_diffusion_model(model_name: str, tmp_path: Path):
 
         # Real LoRA E2E: generate again with a real on-disk PEFT adapter and
         # verify that output changes.
-        if model_name == "Tongyi-MAI/Z-Image-Turbo":
+        if model_name == "Tongyi-MAI/Z-Image-Turbo" or real_lora_dir_override:
             from vllm_omni.lora.request import LoRARequest
+            from vllm_omni.lora.utils import stable_lora_int_id
 
-            lora_dir = _write_zimage_lora(tmp_path / "zimage_lora")
+            lora_dir = real_lora_dir_override or _write_zimage_lora(tmp_path / "zimage_lora")
             lora_request = LoRARequest(
                 lora_name="test",
-                lora_int_id=1,
+                lora_int_id=stable_lora_int_id(lora_dir),
                 lora_path=lora_dir,
             )
             outputs_lora = m.generate(
