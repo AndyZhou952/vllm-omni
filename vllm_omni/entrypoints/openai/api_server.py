@@ -28,7 +28,6 @@ from vllm.entrypoints.openai.api_server import (
     router,
     setup_server,
 )
-
 from vllm.entrypoints.openai.orca_metrics import metrics_header
 from vllm.entrypoints.openai.protocol import (
     ChatCompletionRequest,
@@ -42,9 +41,8 @@ from vllm.entrypoints.openai.protocol import (
 # yapf conflicts with isort for this block
 # yapf: disable
 # yapf: enable
-)
 from vllm.entrypoints.openai.serving_completion import OpenAIServingCompletion
-from vllm.entrypoints.openai.serving_models import BaseModelPath, LoRAModulePath, OpenAIServingModels
+from vllm.entrypoints.openai.serving_models import BaseModelPath, OpenAIServingModels
 from vllm.entrypoints.openai.serving_responses import OpenAIServingResponses
 from vllm.entrypoints.openai.serving_transcription import (
     OpenAIServingTranscription,
@@ -54,7 +52,6 @@ from vllm.entrypoints.openai.utils import validate_json_request
 from vllm.entrypoints.pooling.classify.serving import ServingClassification
 from vllm.entrypoints.pooling.embed.serving import OpenAIServingEmbedding
 from vllm.entrypoints.pooling.pooling.serving import OpenAIServingPooling
-from vllm.entrypoints.openai.tool_parsers import ToolParserManager
 from vllm.entrypoints.pooling.score.serving import ServingScores
 from vllm.entrypoints.serve.disagg.serving import ServingTokens
 from vllm.entrypoints.serve.tokenize.serving import OpenAIServingTokenization
