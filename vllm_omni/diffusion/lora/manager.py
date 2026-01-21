@@ -54,6 +54,11 @@ class DiffusionLoRAManager:
     ):
         """
         Initialize the DiffusionLoRAManager.
+
+        Args:
+            max_cached_adapters: Maximum number of LoRA adapters to keep in the
+                CPU-side cache (LRU). This mirrors vLLM's `max_cpu_loras` and is
+                exposed to users via `OmniDiffusionConfig.max_cpu_loras`.
         """
         self.pipeline = pipeline
         self.device = device
