@@ -135,7 +135,7 @@ def test_lora_manager_supported_modules_are_stable_with_wrapped_layers(monkeypat
     manager = DiffusionLoRAManager(
         pipeline=pipeline,
         device=torch.device("cpu"),
-        dtype=torch.float32,
+        dtype=torch.bfloat16,
         max_cached_adapters=1,
     )
 
@@ -174,7 +174,7 @@ def test_lora_manager_replace_layers_does_not_rewrap_base_layer(monkeypatch):
     manager = DiffusionLoRAManager(
         pipeline=pipeline,
         device=torch.device("cpu"),
-        dtype=torch.float32,
+        dtype=torch.bfloat16,
         max_cached_adapters=1,
     )
 
@@ -192,7 +192,7 @@ def test_lora_manager_activates_fused_lora_on_packed_layer():
     manager = DiffusionLoRAManager(
         pipeline=torch.nn.Module(),
         device=torch.device("cpu"),
-        dtype=torch.float32,
+        dtype=torch.bfloat16,
         max_cached_adapters=1,
     )
 
@@ -242,7 +242,7 @@ def test_lora_manager_activates_packed_lora_from_sublayers():
     manager = DiffusionLoRAManager(
         pipeline=torch.nn.Module(),
         device=torch.device("cpu"),
-        dtype=torch.float32,
+        dtype=torch.bfloat16,
         max_cached_adapters=1,
     )
 
