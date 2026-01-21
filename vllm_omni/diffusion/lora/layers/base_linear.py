@@ -29,6 +29,13 @@ class DiffusionBaseLinearLayerWithLoRA(BaseLinearLayerWithLoRA):
         model_config=None,
     ) -> None:
         super().create_lora_weights(max_loras, lora_config, model_config)
+        # Keep a direct reference for attribute forwarding: `base_layer` is a
+        # registered submodule (stored under `_modules`), so direct access via
+        # `object.__getattribute__` will not find it. We stash a ref in
+        # `__dict__` for robust lookups in `__getattr__`.
+        modules = object.__getattribute__(self, "_modules")
+        base_layer = modules.get("base_layer") or object.__getattribute__(self, "__dict__").get("base_layer")
+        object.__setattr__(self, "_diffusion_base_layer_ref", base_layer)
         n_slices = getattr(self, "n_slices", 1)
         self._diffusion_lora_active_slices = (False,) * int(n_slices)
 
@@ -125,3 +132,21 @@ class DiffusionBaseLinearLayerWithLoRA(BaseLinearLayerWithLoRA):
             offset += slice_size
 
         return y_flat.view(original_shape)
+
+    def __getattr__(self, name: str):
+        # The diffusion model implementations may access attributes directly
+        # from linear layers (e.g. QKVParallelLinear.num_heads). vLLM's LoRA
+        # wrappers don't forward these attributes by default, so we delegate
+        # missing attribute lookups to the underlying base_layer.
+        try:
+            return super().__getattr__(name)
+        except AttributeError as exc:
+            base_layer = object.__getattribute__(self, "__dict__").get("_diffusion_base_layer_ref")
+            if base_layer is None:
+                base_layer = object.__getattribute__(self, "_modules").get("base_layer")
+            if base_layer is None:
+                raise exc
+            try:
+                return getattr(base_layer, name)
+            except AttributeError:
+                raise exc

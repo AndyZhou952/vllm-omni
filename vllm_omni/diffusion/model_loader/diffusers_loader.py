@@ -147,10 +147,17 @@ class DiffusersPipelineLoader:
                     self.load_config.download_dir,
                     revision,
                 )
+            # Some diffusers pipelines keep component weights under a
+            # subfolder (e.g. "transformer/") and the corresponding index file
+            # uses filenames relative to that subfolder. vLLM's
+            # `filter_duplicate_safetensors_files` expects weight_map entries
+            # to be relative to the `hf_folder` we pass in, so we point it to
+            # the component subfolder to avoid filtering out all shards.
+            filter_folder = os.path.join(hf_folder, subfolder) if subfolder is not None else hf_folder
             hf_weights_files = filter_duplicate_safetensors_files(
                 hf_weights_files,
-                hf_folder,
-                index_file_with_subfolder,
+                filter_folder,
+                index_file,
             )
         else:
             hf_weights_files = filter_files_not_needed_for_inference(hf_weights_files)
