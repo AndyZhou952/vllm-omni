@@ -118,7 +118,7 @@ class GPUDiffusionWorker:
             pipeline=self.model_runner.pipeline,
             device=self.device,
             dtype=self.od_config.dtype,
-            max_cached_adapters=1,
+            max_cached_adapters=self.od_config.max_cpu_loras,
             lora_path=self.od_config.lora_path,
             lora_scale=self.od_config.lora_scale,
         )

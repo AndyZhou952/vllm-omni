@@ -278,6 +278,7 @@ class OmniDiffusionConfig:
     # LoRA parameters
     lora_path: str | None = None
     lora_scale: float = 1.0
+    max_cpu_loras: int | None = None
 
     output_type: str = "pil"
 
@@ -438,6 +439,11 @@ class OmniDiffusionConfig:
         elif not isinstance(self.cache_config, DiffusionCacheConfig):
             # If it's neither dict nor DiffusionCacheConfig, convert to empty config
             self.cache_config = DiffusionCacheConfig()
+
+        if self.max_cpu_loras is None:
+            self.max_cpu_loras = 1
+        elif self.max_cpu_loras < 1:
+            raise ValueError("max_cpu_loras must be >= 1 for diffusion LoRA")
 
     def update_multimodal_support(self) -> None:
         self.supports_multimodal_inputs = self.model_class_name in {"QwenImageEditPlusPipeline"}
