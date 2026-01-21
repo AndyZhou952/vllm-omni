@@ -9,7 +9,6 @@ import torch.nn as nn
 from vllm.logger import init_logger
 from vllm.lora.layers import BaseLayerWithLoRA
 from vllm.lora.lora_weights import LoRALayerWeights, PackedLoRALayerWeights
-from vllm.lora.models import LoRAModel
 from vllm.lora.peft_helper import PEFTHelper
 from vllm.lora.request import LoRARequest
 from vllm.lora.utils import (
@@ -26,6 +25,13 @@ from vllm_omni.diffusion.lora.utils import (
     from_layer_diffusion,
 )
 from vllm_omni.lora.utils import stable_lora_int_id
+
+try:
+    # vLLM >= 0.13.0
+    from vllm.lora.lora_model import LoRAModel  # type: ignore
+except ModuleNotFoundError:  # pragma: no cover
+    # vLLM older versions
+    from vllm.lora.models import LoRAModel
 
 logger = init_logger(__name__)
 
