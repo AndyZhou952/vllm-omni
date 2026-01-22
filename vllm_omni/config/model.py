@@ -4,6 +4,7 @@ from typing import Any
 import torch
 from pydantic import ConfigDict
 from pydantic.dataclasses import dataclass
+from vllm.attention.backends.registry import AttentionBackendEnum
 from vllm.config import ModelConfig, config
 from vllm.config.model import (
     _RUNNER_CONVERTS,
@@ -21,15 +22,7 @@ from vllm.transformers_utils.config import (
     get_pooling_config,
 )
 from vllm.transformers_utils.gguf_utils import maybe_patch_hf_config_from_gguf
-
-try:
-    # vLLM >= 0.12.0
-    from vllm.transformers_utils.utils import is_gguf
-except ImportError:  # pragma: no cover
-    # vLLM < 0.12.0
-    from vllm.transformers_utils.gguf_utils import is_gguf  # type: ignore
-from vllm.attention.backends.registry import AttentionBackendEnum
-from vllm.transformers_utils.utils import maybe_model_redirect
+from vllm.transformers_utils.utils import is_gguf, maybe_model_redirect
 
 import vllm_omni.model_executor.models as me_models
 

@@ -44,24 +44,18 @@ from vllm.entrypoints.openai.protocol import (
 from vllm.entrypoints.openai.serving_completion import OpenAIServingCompletion
 from vllm.entrypoints.openai.serving_models import BaseModelPath, OpenAIServingModels
 from vllm.entrypoints.openai.serving_responses import OpenAIServingResponses
+from vllm.entrypoints.openai.serving_tokenization import OpenAIServingTokenization
+from vllm.entrypoints.openai.serving_tokens import ServingTokens
 from vllm.entrypoints.openai.serving_transcription import (
     OpenAIServingTranscription,
     OpenAIServingTranslation,
 )
+from vllm.entrypoints.openai.tool_parsers import ToolParserManager
 from vllm.entrypoints.openai.utils import validate_json_request
 from vllm.entrypoints.pooling.classify.serving import ServingClassification
 from vllm.entrypoints.pooling.embed.serving import OpenAIServingEmbedding
 from vllm.entrypoints.pooling.pooling.serving import OpenAIServingPooling
 from vllm.entrypoints.pooling.score.serving import ServingScores
-
-try:
-    # vLLM >= 0.11.0
-    from vllm.entrypoints.openai.serving_tokenization import OpenAIServingTokenization
-    from vllm.entrypoints.openai.serving_tokens import ServingTokens
-except ImportError:  # pragma: no cover
-    # Older/newer vLLM variants may keep these in a separate "serve" package.
-    from vllm.entrypoints.serve.disagg.serving import ServingTokens  # type: ignore
-    from vllm.entrypoints.serve.tokenize.serving import OpenAIServingTokenization  # type: ignore
 from vllm.entrypoints.tool_server import DemoToolServer, MCPToolServer, ToolServer
 from vllm.entrypoints.utils import (
     load_aware_call,
@@ -71,12 +65,6 @@ from vllm.entrypoints.utils import (
 )
 from vllm.logger import init_logger
 from vllm.tasks import POOLING_TASKS
-
-try:
-    # vLLM >= 0.11.0
-    from vllm.entrypoints.openai.tool_parsers import ToolParserManager
-except ImportError:  # pragma: no cover
-    from vllm.tool_parsers import ToolParserManager  # type: ignore
 from vllm.utils.system_utils import decorate_logs
 
 from vllm_omni.entrypoints.async_omni import AsyncOmni
