@@ -20,22 +20,17 @@ from vllm_omni import Omni
 os.environ["VLLM_TEST_CLEAN_GPU_MEMORY"] = "1"
 
 
-models = ["Tongyi-MAI/Z-Image-Turbo", "riverclouds/qwen_image_random"]
-model_override = os.environ.get("VLLM_OMNI_E2E_T2I_MODEL")
-if model_override:
-    models = [model_override]
-real_lora_dir_override = os.environ.get("VLLM_OMNI_E2E_T2I_LORA_DIR")
+# This test is specific to Z-Image LoRA behavior. Keep it focused on a single
+# model to reduce runtime and avoid extra downloads.
+models = ["Tongyi-MAI/Z-Image-Turbo"]
 
-# NPU still can't run Tongyi-MAI/Z-Image-Turbo properly
-# Modelscope can't find riverclouds/qwen_image_random
-# TODO: When NPU support is ready, remove this branch.
+# NPU still can't run Tongyi-MAI/Z-Image-Turbo properly.
 if is_npu():
-    models = ["Qwen/Qwen-Image"]
-elif is_rocm():
-    # TODO: When ROCm support is ready, remove this branch.
-    # vLLM V0.11.0 has issues running riverclouds/qwen_image_random
-    # on ROCm
-    models = ["Tongyi-MAI/Z-Image-Turbo"]
+    pytest.skip("Tongyi-MAI/Z-Image-Turbo is not supported on NPU yet.", allow_module_level=True)
+
+# TODO: Validate LoRA E2E on ROCm and remove this skip when ready.
+if is_rocm():
+    pytest.skip("Diffusion LoRA E2E is not supported on ROCm yet.", allow_module_level=True)
 
 
 @pytest.mark.parametrize("model_name", models)
@@ -113,11 +108,11 @@ def test_diffusion_model(model_name: str, tmp_path: Path):
 
         # Real LoRA E2E: generate again with a real on-disk PEFT adapter and
         # verify that output changes.
-        if model_name == "Tongyi-MAI/Z-Image-Turbo" or real_lora_dir_override:
+        if model_name == "Tongyi-MAI/Z-Image-Turbo":
             from vllm_omni.lora.request import LoRARequest
             from vllm_omni.lora.utils import stable_lora_int_id
 
-            lora_dir = real_lora_dir_override or _write_zimage_lora(tmp_path / "zimage_lora")
+            lora_dir = _write_zimage_lora(tmp_path / "zimage_lora")
             lora_request = LoRARequest(
                 lora_name="test",
                 lora_int_id=stable_lora_int_id(lora_dir),

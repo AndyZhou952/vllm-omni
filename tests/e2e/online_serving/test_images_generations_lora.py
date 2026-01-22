@@ -31,9 +31,7 @@ from vllm_omni.utils.platform_utils import is_npu
 
 os.environ["VLLM_WORKER_MULTIPROC_METHOD"] = "spawn"
 
-MODEL = os.environ.get("VLLM_OMNI_E2E_IMAGES_MODEL", "Tongyi-MAI/Z-Image-Turbo")
-LORA_A_DIR = os.environ.get("VLLM_OMNI_E2E_IMAGES_LORA_A_DIR")
-LORA_B_DIR = os.environ.get("VLLM_OMNI_E2E_IMAGES_LORA_B_DIR")
+MODEL = "Tongyi-MAI/Z-Image-Turbo"
 
 
 PROMPT = "a photo of a cat sitting on a laptop keyboard"
@@ -219,16 +217,8 @@ def test_images_generations_per_request_lora_switching(omni_server: OmniServer, 
     base_slice = _image_blue_tail_slice(base_img)
 
     # Adapter A: apply delta to Q slice only.
-    if LORA_A_DIR:
-        lora_a_dir = Path(LORA_A_DIR)
-    else:
-        if MODEL != "Tongyi-MAI/Z-Image-Turbo":
-            pytest.skip(
-                "Set VLLM_OMNI_E2E_IMAGES_LORA_A_DIR/VLLM_OMNI_E2E_IMAGES_LORA_B_DIR "
-                "to run this test with a non-default model without downloading extra adapters."
-            )
-        lora_a_dir = tmp_path / "zimage_lora_a"
-        _write_zimage_lora(lora_a_dir, q_scale=0.1)
+    lora_a_dir = tmp_path / "zimage_lora_a"
+    _write_zimage_lora(lora_a_dir, q_scale=0.1)
     payload_a = _basic_payload()
     payload_a["lora"] = {"name": "a", "path": str(lora_a_dir), "scale": 2.0}
     img_a = _post_images(omni_server, payload_a)
@@ -236,16 +226,8 @@ def test_images_generations_per_request_lora_switching(omni_server: OmniServer, 
     _assert_slice_diff(a_slice, base_slice, label="lora_a_vs_base")
 
     # Adapter B: apply delta to K slice only (should differ from adapter A).
-    if LORA_B_DIR:
-        lora_b_dir = Path(LORA_B_DIR)
-    else:
-        if MODEL != "Tongyi-MAI/Z-Image-Turbo":
-            pytest.skip(
-                "Set VLLM_OMNI_E2E_IMAGES_LORA_A_DIR/VLLM_OMNI_E2E_IMAGES_LORA_B_DIR "
-                "to run this test with a non-default model without downloading extra adapters."
-            )
-        lora_b_dir = tmp_path / "zimage_lora_b"
-        _write_zimage_lora(lora_b_dir, k_scale=0.1)
+    lora_b_dir = tmp_path / "zimage_lora_b"
+    _write_zimage_lora(lora_b_dir, k_scale=0.1)
     payload_b = _basic_payload()
     payload_b["lora"] = {"name": "b", "path": str(lora_b_dir), "scale": 2.0}
     img_b = _post_images(omni_server, payload_b)
