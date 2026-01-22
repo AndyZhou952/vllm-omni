@@ -29,7 +29,7 @@ from vllm.entrypoints.chat_utils import (
     make_tool_call_id,
     resolve_chat_template_content_format,
 )
-from vllm.entrypoints.harmony_utils import (
+from vllm.entrypoints.openai.parser.harmony_utils import (
     get_streamable_parser_for_assistant,
     parse_chat_output,
 )
@@ -59,8 +59,6 @@ from vllm.entrypoints.openai.serving_engine import (
     ChatLikeRequest,
     clamp_prompt_logprobs,
 )
-from vllm.entrypoints.openai.tool_parsers import ToolParser
-from vllm.entrypoints.openai.tool_parsers.mistral_tool_parser import MistralToolCall
 from vllm.entrypoints.openai.utils import maybe_filter_parallel_tool_calls
 from vllm.entrypoints.utils import should_include_usage
 from vllm.inputs.data import PromptType, TokensPrompt
@@ -74,6 +72,8 @@ from vllm.tokenizers.mistral import (
     truncate_tool_call_ids,
     validate_request_params,
 )
+from vllm.tool_parsers import ToolParser
+from vllm.tool_parsers.mistral_tool_parser import MistralToolCall
 from vllm.transformers_utils.tokenizer import AnyTokenizer
 from vllm.utils.collection_utils import as_list, is_list_of
 
