@@ -124,7 +124,7 @@ class OmniServer:
 def omni_server():
     if is_npu():
         pytest.skip("Tongyi-MAI/Z-Image-Turbo is not supported on NPU yet.")
-    with OmniServer(MODEL, ["--num-gpus", "1", "--enforce-eager"]) as server:
+    with OmniServer(MODEL, ["--num-gpus", "1"]) as server:
         yield server
 
 
