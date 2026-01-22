@@ -7,6 +7,7 @@ from dataclasses import dataclass
 
 import torch
 from vllm.lora.lora_weights import LoRALayerWeights
+from vllm.lora.request import LoRARequest
 from vllm.lora.utils import get_supported_lora_modules
 from vllm.model_executor.layers.linear import LinearBase
 
@@ -278,3 +279,98 @@ def test_lora_manager_activates_packed_lora_from_sublayers():
     assert torch.allclose(lora_b_list[0], torch.ones((2, rank)) * 3 * 2.0)
     assert torch.allclose(lora_b_list[1], torch.ones((1, rank)) * 4 * 2.0)
     assert torch.allclose(lora_b_list[2], torch.ones((1, rank)) * 4 * 2.0)
+
+
+def _dummy_lora_request(adapter_id: int) -> LoRARequest:
+    return LoRARequest(
+        lora_name=f"adapter_{adapter_id}",
+        lora_int_id=adapter_id,
+        lora_path=f"/tmp/adapter_{adapter_id}",
+    )
+
+
+def test_lora_manager_evicts_lru_adapter_when_cache_full(monkeypatch):
+    manager = DiffusionLoRAManager(
+        pipeline=torch.nn.Module(),
+        device=torch.device("cpu"),
+        dtype=torch.bfloat16,
+        max_cached_adapters=2,
+    )
+
+    def _fake_load(_req: LoRARequest):
+        lora_model = type("LM", (), {"id": _req.lora_int_id})()
+        peft_helper = type("PH", (), {})()
+        return lora_model, peft_helper
+
+    monkeypatch.setattr(manager, "_load_adapter", _fake_load)
+    monkeypatch.setattr(manager, "_replace_layers_with_lora", lambda _peft: None)
+    monkeypatch.setattr(manager, "_activate_adapter", lambda _adapter_id: None)
+
+    req1 = _dummy_lora_request(1)
+    req2 = _dummy_lora_request(2)
+    req3 = _dummy_lora_request(3)
+
+    manager.set_active_adapter(req1, lora_scale=1.0)
+    manager.set_active_adapter(req2, lora_scale=1.0)
+
+    # Touch adapter 1 so adapter 2 becomes LRU.
+    manager.set_active_adapter(req1, lora_scale=1.0)
+
+    manager.set_active_adapter(req3, lora_scale=1.0)
+
+    assert set(manager.list_adapters()) == {1, 3}
+
+
+def test_lora_manager_does_not_evict_pinned_adapter(monkeypatch):
+    manager = DiffusionLoRAManager(
+        pipeline=torch.nn.Module(),
+        device=torch.device("cpu"),
+        dtype=torch.bfloat16,
+        max_cached_adapters=2,
+    )
+
+    def _fake_load(_req: LoRARequest):
+        lora_model = type("LM", (), {"id": _req.lora_int_id})()
+        peft_helper = type("PH", (), {})()
+        return lora_model, peft_helper
+
+    monkeypatch.setattr(manager, "_load_adapter", _fake_load)
+    monkeypatch.setattr(manager, "_replace_layers_with_lora", lambda _peft: None)
+    monkeypatch.setattr(manager, "_activate_adapter", lambda _adapter_id: None)
+
+    manager.set_active_adapter(_dummy_lora_request(1), lora_scale=1.0)
+    assert manager.pin_adapter(1)
+
+    manager.set_active_adapter(_dummy_lora_request(2), lora_scale=1.0)
+    manager.set_active_adapter(_dummy_lora_request(3), lora_scale=1.0)
+
+    assert set(manager.list_adapters()) == {1, 3}
+
+
+def test_lora_manager_warns_when_all_adapters_pinned(monkeypatch):
+    manager = DiffusionLoRAManager(
+        pipeline=torch.nn.Module(),
+        device=torch.device("cpu"),
+        dtype=torch.bfloat16,
+        max_cached_adapters=2,
+    )
+
+    def _fake_load(_req: LoRARequest):
+        lora_model = type("LM", (), {"id": _req.lora_int_id})()
+        peft_helper = type("PH", (), {})()
+        return lora_model, peft_helper
+
+    monkeypatch.setattr(manager, "_load_adapter", _fake_load)
+    monkeypatch.setattr(manager, "_replace_layers_with_lora", lambda _peft: None)
+    monkeypatch.setattr(manager, "_activate_adapter", lambda _adapter_id: None)
+
+    manager.set_active_adapter(_dummy_lora_request(1), lora_scale=1.0)
+    manager.set_active_adapter(_dummy_lora_request(2), lora_scale=1.0)
+
+    assert manager.pin_adapter(1)
+    assert manager.pin_adapter(2)
+
+    manager.max_cached_adapters = 1
+    manager._evict_if_needed()
+
+    assert set(manager.list_adapters()) == {1, 2}

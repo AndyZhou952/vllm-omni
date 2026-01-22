@@ -13,7 +13,6 @@ import base64
 import json
 import os
 import signal
-import socket
 import subprocess
 import sys
 import time
@@ -88,20 +87,6 @@ class OmniServer:
 
         # Wait for server to be ready.
         max_wait = 600
-        start_time = time.time()
-        while time.time() - start_time < max_wait:
-            try:
-                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-                    sock.settimeout(1)
-                    if sock.connect_ex((self.host, self.port)) == 0:
-                        break
-            except Exception:
-                pass
-            time.sleep(2)
-        else:
-            raise RuntimeError(f"Server failed to start within {max_wait} seconds")
-
-        # Poll /v1/models to ensure the app is ready to serve requests.
         url = f"http://{self.host}:{self.port}/v1/models"
         start_time = time.time()
         while time.time() - start_time < max_wait:
@@ -141,7 +126,7 @@ class OmniServer:
 def omni_server():
     if is_npu():
         pytest.skip("Tongyi-MAI/Z-Image-Turbo is not supported on NPU yet.")
-    with OmniServer(MODEL, ["--num-gpus", "1"]) as server:
+    with OmniServer(MODEL, ["--num-gpus", "1", "--enforce-eager"]) as server:
         yield server
 
 
