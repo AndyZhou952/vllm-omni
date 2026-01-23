@@ -7,12 +7,12 @@ from dataclasses import dataclass
 
 import torch
 from vllm.lora.lora_weights import LoRALayerWeights
-from vllm.lora.request import LoRARequest
 from vllm.lora.utils import get_supported_lora_modules
 from vllm.model_executor.layers.linear import LinearBase
 
 from vllm_omni.diffusion.lora.layers.base_linear import DiffusionBaseLinearLayerWithLoRA
 from vllm_omni.diffusion.lora.manager import DiffusionLoRAManager
+from vllm_omni.lora.request import LoRARequest
 
 
 @dataclass
