@@ -52,7 +52,6 @@ VENV_PYTHON="${VENV_DIR}/bin/python"
 
 "${VENV_PYTHON}" -m pytest -v -s tests/entrypoints/
 "${VENV_PYTHON}" -m pytest -v -s tests/diffusion/cache/
-"${VENV_PYTHON}" -m pytest -v -s tests/diffusion/lora/test_lora_manager.py
-"${VENV_PYTHON}" -m pytest -v -s tests/diffusion/lora/test_lora_utils.py
+"${VENV_PYTHON}" -m pytest -v -s tests/diffusion/lora/
 "${VENV_PYTHON}" -m pytest -v -s tests/model_executor/models/qwen2_5_omni/test_audio_length.py
 "${VENV_PYTHON}" -m pytest -v -s tests/worker/
