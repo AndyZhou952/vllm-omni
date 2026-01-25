@@ -30,7 +30,11 @@ def _match_target_modules(module_name: str, target_modules: list[str]) -> bool:
 def _expand_expected_modules_for_merged_projections(supported_modules: set[str]) -> set[str]:
     expanded = set(supported_modules)
 
-    # Known packed projections: accept their separate counterparts.
+    # Some diffusion models use "packed" (a.k.a. fused) projections like
+    # `to_qkv` or `w13`, while LoRA checkpoints are typically trained/exported
+    # against the logical sub-projections (e.g. `to_q`, `to_k`, `to_v`) as
+    # separate module names. Expand supported module names so that a packed
+    # module can accept LoRA weights saved under its sublayer names.
     packed_expansions: dict[str, list[str]] = {
         # diffusion: fused QKV
         "to_qkv": ["to_q", "to_k", "to_v"],

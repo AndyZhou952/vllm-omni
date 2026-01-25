@@ -114,6 +114,91 @@ def test_diffusion_base_linear_apply_multi_slice():
     assert torch.allclose(out, expected)
 
 
+def test_diffusion_base_linear_reset_lora_disables_fast_path(monkeypatch):
+    # Verify that after reset_lora(), apply() skips LoRA matmuls even if the
+    # LoRA tensors are still allocated and non-empty.
+    from vllm.lora.layers.base_linear import BaseLinearLayerWithLoRA
+
+    layer = DiffusionBaseLinearLayerWithLoRA.__new__(DiffusionBaseLinearLayerWithLoRA)
+    layer.tp_size = 1
+    layer.lora_config = _DummyLoRAConfig()
+
+    in_dim = 2
+    out_dim = 2
+    rank = 1
+
+    base_weight = torch.eye(in_dim)
+    layer.base_layer = type("Base", (), {})()
+    layer.base_layer.quant_method = _DummyQuantMethod(base_weight)
+
+    a = torch.ones((1, 1, rank, in_dim))
+    b = torch.tensor([[[[1.0], [2.0]]]])  # (1,1,out_dim,rank)
+
+    layer.lora_a_stacked = (a,)
+    layer.lora_b_stacked = (b,)
+    layer.output_slices = (out_dim,)
+    layer._diffusion_lora_active_slices = (True,)
+
+    x = torch.tensor([[1.0, 2.0]])
+    out_active = layer.apply(x)
+    assert torch.allclose(out_active, torch.tensor([[4.0, 8.0]]))
+
+    monkeypatch.setattr(BaseLinearLayerWithLoRA, "reset_lora", lambda self, index: None)
+    layer.reset_lora(0)
+
+    assert layer._diffusion_lora_active_slices == (False,)
+    out_inactive = layer.apply(x)
+    assert torch.allclose(out_inactive, x)
+
+
+def test_diffusion_base_linear_apply_respects_inactive_slices():
+    # Build a fake diffusion LoRA layer with 2 slices and rank=2.
+    layer = DiffusionBaseLinearLayerWithLoRA.__new__(DiffusionBaseLinearLayerWithLoRA)
+    layer.tp_size = 1
+    layer.lora_config = _DummyLoRAConfig()
+
+    in_dim = 3
+    out_slices = (2, 1)
+    rank = 2
+
+    base_weight = torch.tensor(
+        [
+            [1.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0],
+            [0.0, 0.0, 1.0],
+        ]
+    )
+    layer.base_layer = type("Base", (), {})()
+    layer.base_layer.quant_method = _DummyQuantMethod(base_weight)
+
+    a0 = torch.zeros((1, 1, rank, in_dim))
+    b0 = torch.zeros((1, 1, out_slices[0], rank))
+    a1 = torch.zeros((1, 1, rank, in_dim))
+    b1 = torch.zeros((1, 1, out_slices[1], rank))
+
+    A0 = torch.tensor([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])  # (2, 3)
+    B0 = torch.tensor([[1.0, 0.0], [0.0, 1.0]])  # (2, 2)
+    a0[0, 0, :, :] = A0
+    b0[0, 0, :, :] = B0
+
+    A1 = torch.tensor([[0.0, 0.0, 1.0], [1.0, 0.0, 0.0]])  # (2, 3)
+    B1 = torch.tensor([[2.0, 0.0]])  # (1, 2)
+    a1[0, 0, :, :] = A1
+    b1[0, 0, :, :] = B1
+
+    layer.lora_a_stacked = (a0, a1)
+    layer.lora_b_stacked = (b0, b1)
+    layer.output_slices = out_slices
+    layer._diffusion_lora_active_slices = (True, False)
+
+    x = torch.tensor([[1.0, 2.0, 3.0]])
+    out = layer.apply(x)
+
+    # Only the first slice should be adapted.
+    expected = torch.tensor([[2.0, 4.0, 3.0]])
+    assert torch.allclose(out, expected)
+
+
 def test_lora_manager_supported_modules_are_stable_with_wrapped_layers(monkeypatch):
     # Simulate a pipeline that already contains LoRA wrappers where the original
     # LinearBase is nested under ".base_layer".
