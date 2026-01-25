@@ -22,4 +22,3 @@ def test_expand_expected_modules_noop_without_packed_modules():
     supported = {"to_q", "to_k", "to_v"}
     expanded = _expand_expected_modules_for_merged_projections(supported)
     assert expanded == supported
-
