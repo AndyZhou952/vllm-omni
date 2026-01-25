@@ -169,4 +169,3 @@ def test_diffusion_base_linear_apply_respects_inactive_slices():
     # Only the first slice should be adapted.
     expected = torch.tensor([[2.0, 4.0, 3.0]])
     assert torch.allclose(out, expected)
-
