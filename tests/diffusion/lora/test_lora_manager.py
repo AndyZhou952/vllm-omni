@@ -110,6 +110,50 @@ def test_lora_manager_replace_layers_does_not_rewrap_base_layer(monkeypatch):
     assert replace_calls == ["foo"]
 
 
+def test_lora_manager_replaces_packed_layer_when_targeting_sublayers(monkeypatch):
+    import vllm_omni.diffusion.lora.manager as manager_mod
+
+    class _DummyBaseLayerWithLoRA(torch.nn.Module):
+        def __init__(self, base_layer: torch.nn.Module):
+            super().__init__()
+            self.base_layer = base_layer
+
+    monkeypatch.setattr(manager_mod, "BaseLayerWithLoRA", _DummyBaseLayerWithLoRA)
+
+    def _fake_from_layer_diffusion(*, layer: torch.nn.Module, **_kwargs):
+        return _DummyBaseLayerWithLoRA(layer)
+
+    replace_calls: list[str] = []
+
+    def _fake_replace_submodule(root: torch.nn.Module, module_name: str, submodule: torch.nn.Module):
+        replace_calls.append(module_name)
+        setattr(root, module_name, submodule)
+
+    monkeypatch.setattr(manager_mod, "from_layer_diffusion", _fake_from_layer_diffusion)
+    monkeypatch.setattr(manager_mod, "replace_submodule", _fake_replace_submodule)
+
+    pipeline = torch.nn.Module()
+    pipeline.packed_modules_mapping = {"to_qkv": ["to_q", "to_k", "to_v"]}
+    pipeline.transformer = torch.nn.Module()
+    pipeline.transformer.to_qkv = _FakeLinearBase()
+
+    manager = DiffusionLoRAManager(
+        pipeline=pipeline,
+        device=torch.device("cpu"),
+        dtype=torch.bfloat16,
+        max_cached_adapters=1,
+    )
+
+    # Treat the dummy layer as a packed 3-slice projection so the manager uses
+    # `packed_modules_mapping` to decide replacement based on target_modules.
+    monkeypatch.setattr(manager, "_get_packed_modules_list", lambda _module: ["q", "k", "v"])
+
+    peft_helper = type("_PH", (), {"r": 1, "target_modules": ["to_q"]})()
+    manager._replace_layers_with_lora(peft_helper)
+
+    assert replace_calls == ["to_qkv"]
+
+
 def test_lora_manager_activates_fused_lora_on_packed_layer():
     manager = DiffusionLoRAManager(
         pipeline=torch.nn.Module(),
@@ -161,8 +205,10 @@ def test_lora_manager_activates_fused_lora_on_packed_layer():
 
 
 def test_lora_manager_activates_packed_lora_from_sublayers():
+    pipeline = torch.nn.Module()
+    pipeline.packed_modules_mapping = {"to_qkv": ["to_q", "to_k", "to_v"]}
     manager = DiffusionLoRAManager(
-        pipeline=torch.nn.Module(),
+        pipeline=pipeline,
         device=torch.device("cpu"),
         dtype=torch.bfloat16,
         max_cached_adapters=1,

@@ -21,7 +21,7 @@ from vllm.model_executor.layers.linear import MergedColumnParallelLinear, QKVPar
 
 from vllm_omni.config.lora import LoRAConfig
 from vllm_omni.diffusion.lora.utils import (
-    _expand_expected_modules_for_merged_projections,
+    _expand_expected_modules_for_packed_layers,
     _match_target_modules,
     from_layer_diffusion,
 )
@@ -64,7 +64,11 @@ class DiffusionLoRAManager:
         # vLLM's get_supported_lora_modules() again would incorrectly yield
         # "base_layer" instead of the real target module suffixes.
         self._supported_lora_modules = self._compute_supported_lora_modules()
-        self._expected_lora_modules = _expand_expected_modules_for_merged_projections(self._supported_lora_modules)
+        self._packed_modules_mapping = self._compute_packed_modules_mapping()
+        self._expected_lora_modules = _expand_expected_modules_for_packed_layers(
+            self._supported_lora_modules,
+            self._packed_modules_mapping,
+        )
 
         # LRU-style cache management
         self.max_cached_adapters = max_cached_adapters  # max_cpu_loras
@@ -123,6 +127,56 @@ class DiffusionLoRAManager:
             supported.discard("base_layer")
 
         return supported
+
+    def _compute_packed_modules_mapping(self) -> dict[str, list[str]]:
+        """Collect packed->sublayer mappings from the diffusion model.
+
+        vLLM models declare `packed_modules_mapping` on the model class. For
+        diffusion pipelines, we attach the same mapping on the transformer
+        module(s) that implement packed (fused) projections, so LoRA loading can
+        accept checkpoints trained against the logical sub-projections.
+        """
+        mapping: dict[str, list[str]] = {}
+        for module in self.pipeline.modules():
+            packed = getattr(module, "packed_modules_mapping", None)
+            if not isinstance(packed, dict):
+                continue
+            for packed_name, sub_names in packed.items():
+                if not isinstance(packed_name, str) or not packed_name:
+                    continue
+                if not isinstance(sub_names, (list, tuple)) or not all(isinstance(s, str) for s in sub_names):
+                    continue
+                sub_names_list = list(sub_names)
+                if not sub_names_list:
+                    continue
+
+                existing = mapping.get(packed_name)
+                if existing is None:
+                    mapping[packed_name] = sub_names_list
+                elif existing != sub_names_list:
+                    logger.warning(
+                        "Conflicting packed_modules_mapping for %s: %s vs %s; using %s",
+                        packed_name,
+                        existing,
+                        sub_names_list,
+                        existing,
+                    )
+
+        return mapping
+
+    def _get_packed_sublayer_suffixes(self, packed_module_suffix: str, n_slices: int) -> list[str] | None:
+        sub_suffixes = self._packed_modules_mapping.get(packed_module_suffix)
+        if not sub_suffixes:
+            return None
+        if len(sub_suffixes) != n_slices:
+            logger.warning(
+                "packed_modules_mapping[%s] has %d slices but layer expects %d; skipping sublayer lookup",
+                packed_module_suffix,
+                len(sub_suffixes),
+                n_slices,
+            )
+            return None
+        return sub_suffixes
 
     def set_active_adapter(self, lora_request: LoRARequest | None, lora_scale: float = 1.0) -> None:
         """Set the active LoRA adapter for the pipeline.
@@ -277,16 +331,13 @@ class DiffusionLoRAManager:
                     should_replace = _matches_target(full_module_name)
                     if not should_replace and len(packed_modules_list) > 1:
                         prefix, _, packed_suffix = full_module_name.rpartition(".")
-                        for sub_suffixes in self._packed_sublayer_suffix_candidates(
-                            packed_suffix, len(packed_modules_list)
-                        ):
+                        sub_suffixes = self._get_packed_sublayer_suffixes(packed_suffix, len(packed_modules_list))
+                        if sub_suffixes is not None:
                             for sub_suffix in sub_suffixes:
                                 sub_full_name = f"{prefix}.{sub_suffix}" if prefix else sub_suffix
                                 if _matches_target(sub_full_name):
                                     should_replace = True
                                     break
-                            if should_replace:
-                                break
 
                     if not should_replace:
                         continue
@@ -365,23 +416,6 @@ class DiffusionLoRAManager:
         module_suffix = full_module_name.split(".")[-1]
         return lora_model.get_lora(module_suffix)
 
-    def _packed_sublayer_suffix_candidates(self, packed_module_suffix: str, n_slices: int) -> list[list[str]]:
-        if n_slices == 3:
-            if packed_module_suffix == "to_qkv":
-                return [["to_q", "to_k", "to_v"], ["q_proj", "k_proj", "v_proj"]]
-            if packed_module_suffix == "add_kv_proj":
-                return [["add_q_proj", "add_k_proj", "add_v_proj"]]
-            return [["q_proj", "k_proj", "v_proj"], ["to_q", "to_k", "to_v"]]
-
-        if n_slices == 2:
-            if packed_module_suffix == "w13":
-                return [["w1", "w3"], ["gate_proj", "up_proj"]]
-            if packed_module_suffix == "gate_up_proj":
-                return [["gate_proj", "up_proj"], ["w1", "w3"]]
-            return [["gate_proj", "up_proj"], ["w1", "w3"]]
-
-        return []
-
     def _activate_adapter(self, adapter_id: int) -> None:
         if self._active_adapter_id == adapter_id:
             logger.debug("Adapter %d already active, skipping", adapter_id)
@@ -395,47 +429,48 @@ class DiffusionLoRAManager:
             lora_weights = self._get_lora_weights(lora_model, full_module_name)
 
             if lora_weights is None:
-                # Attempt to load packed LoRA weights from known sublayer suffixes.
                 n_slices = getattr(lora_layer, "n_slices", 1)
                 if n_slices > 1:
                     prefix, _, packed_suffix = full_module_name.rpartition(".")
-                    for sub_suffixes in self._packed_sublayer_suffix_candidates(packed_suffix, n_slices):
-                        sub_loras: list[LoRALayerWeights | None] = []
-                        any_found = False
-                        for sub_suffix in sub_suffixes:
-                            sub_full_name = f"{prefix}.{sub_suffix}" if prefix else sub_suffix
-                            sub_lora = self._get_lora_weights(lora_model, sub_full_name)
-                            if sub_lora is not None:
-                                any_found = True
-                                # Packed layers expect plain (non-packed) subloras.
-                                if isinstance(sub_lora, PackedLoRALayerWeights):
-                                    sub_lora = None
-                            sub_loras.append(sub_lora if isinstance(sub_lora, LoRALayerWeights) else None)
-
-                        if not any_found:
-                            continue
-
-                        scale = self._adapter_scales.get(adapter_id, 1.0)
-                        lora_a_list: list[torch.Tensor | None] = []
-                        lora_b_list: list[torch.Tensor | None] = []
-                        for sub_lora in sub_loras:
-                            if sub_lora is None:
-                                lora_a_list.append(None)
-                                lora_b_list.append(None)
-                                continue
-                            lora_a_list.append(sub_lora.lora_a)
-                            lora_b_list.append(sub_lora.lora_b * scale)
-
-                        lora_layer.set_lora(index=0, lora_a=lora_a_list, lora_b=lora_b_list)
-                        logger.debug(
-                            "Activated packed LoRA for %s via submodules=%s (scale=%.2f)",
-                            full_module_name,
-                            sub_suffixes,
-                            scale,
-                        )
-                        break
-                    else:
+                    sub_suffixes = self._get_packed_sublayer_suffixes(packed_suffix, n_slices)
+                    if sub_suffixes is None:
                         lora_layer.reset_lora(0)
+                        continue
+
+                    sub_loras: list[LoRALayerWeights | None] = []
+                    any_found = False
+                    for sub_suffix in sub_suffixes:
+                        sub_full_name = f"{prefix}.{sub_suffix}" if prefix else sub_suffix
+                        sub_lora = self._get_lora_weights(lora_model, sub_full_name)
+                        if sub_lora is not None:
+                            any_found = True
+                            # Packed layers expect plain (non-packed) subloras.
+                            if isinstance(sub_lora, PackedLoRALayerWeights):
+                                sub_lora = None
+                        sub_loras.append(sub_lora if isinstance(sub_lora, LoRALayerWeights) else None)
+
+                    if not any_found:
+                        lora_layer.reset_lora(0)
+                        continue
+
+                    scale = self._adapter_scales.get(adapter_id, 1.0)
+                    lora_a_list: list[torch.Tensor | None] = []
+                    lora_b_list: list[torch.Tensor | None] = []
+                    for sub_lora in sub_loras:
+                        if sub_lora is None:
+                            lora_a_list.append(None)
+                            lora_b_list.append(None)
+                            continue
+                        lora_a_list.append(sub_lora.lora_a)
+                        lora_b_list.append(sub_lora.lora_b * scale)
+
+                    lora_layer.set_lora(index=0, lora_a=lora_a_list, lora_b=lora_b_list)
+                    logger.debug(
+                        "Activated packed LoRA for %s via submodules=%s (scale=%.2f)",
+                        full_module_name,
+                        sub_suffixes,
+                        scale,
+                    )
                 else:
                     lora_layer.reset_lora(0)
                 continue

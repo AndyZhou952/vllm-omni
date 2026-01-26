@@ -27,26 +27,27 @@ def _match_target_modules(module_name: str, target_modules: list[str]) -> bool:
     )
 
 
-def _expand_expected_modules_for_merged_projections(supported_modules: set[str]) -> set[str]:
-    expanded = set(supported_modules)
+def _expand_expected_modules_for_packed_layers(
+    supported_modules: set[str],
+    packed_modules_mapping: dict[str, list[str]] | None,
+) -> set[str]:
+    """Expand expected LoRA module suffixes for packed (fused) projections.
 
-    # Some diffusion models use "packed" (a.k.a. fused) projections like
-    # `to_qkv` or `w13`, while LoRA checkpoints are typically trained/exported
-    # against the logical sub-projections (e.g. `to_q`, `to_k`, `to_v`) as
-    # separate module names. Expand supported module names so that a packed
-    # module can accept LoRA weights saved under its sublayer names.
-    packed_expansions: dict[str, list[str]] = {
-        # diffusion: fused QKV
-        "to_qkv": ["to_q", "to_k", "to_v"],
-        "qkv_proj": ["q_proj", "k_proj", "v_proj"],
-        # diffusion: fused added KV (name is legacy; it still outputs QKV)
-        "add_kv_proj": ["add_q_proj", "add_k_proj", "add_v_proj"],
-        # LLM-style fused MLP projections
-        "gate_up_proj": ["gate_proj", "up_proj"],
-        # Z-Image fused MLP projections
-        "w13": ["w1", "w3"],
-    }
-    for packed_name, sub_names in packed_expansions.items():
+    Some diffusion models use packed projections like `to_qkv` or `w13`, while
+    LoRA checkpoints are typically saved against the logical sub-projections
+    (e.g. `to_q`/`to_k`/`to_v`, `w1`/`w3`). The packed layer name is present in
+    `supported_modules`, but the sublayer names are not. Expanding the set
+    ensures these sublayer keys are not dropped when loading a LoRA checkpoint.
+
+    The packed→sublayer mapping is model-specific (see each diffusion model's
+    `packed_modules_mapping`) so new packed layers are added alongside the model
+    implementation rather than hard-coded in the LoRA framework.
+    """
+    expanded = set(supported_modules)
+    if not packed_modules_mapping:
+        return expanded
+
+    for packed_name, sub_names in packed_modules_mapping.items():
         if packed_name in supported_modules:
             expanded.update(sub_names)
 
