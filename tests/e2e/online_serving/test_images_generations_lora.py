@@ -190,7 +190,15 @@ def _image_blue_tail_slice(img: Image.Image) -> np.ndarray:
 def _assert_slice_close(actual: np.ndarray, expected: np.ndarray, *, label: str) -> None:
     assert actual.shape == (3, 3)
     assert expected.shape == (3, 3)
-    assert np.allclose(actual, expected, atol=2.0), f"{label} slice mismatch: {actual.tolist()}"
+    diff = np.abs(actual - expected)
+    max_diff = float(diff.max())
+    mean_diff = float(diff.mean())
+    # NOTE: Different attention backends / torch.compile can introduce small
+    # floating-point drift that shows up as a few LSBs in uint8 pixels. Keep
+    # the reset check tolerant but bounded to avoid flaky CI.
+    assert max_diff <= 5.0 and mean_diff <= 3.0, (
+        f"{label} slice mismatch (max={max_diff:.1f}, mean={mean_diff:.1f}): {actual.tolist()}"
+    )
 
 
 def _assert_slice_diff(actual: np.ndarray, baseline: np.ndarray, *, label: str) -> None:
@@ -224,6 +232,7 @@ def test_images_generations_per_request_lora_switching(omni_server: OmniServer, 
     img_a = _post_images(omni_server, payload_a)
     a_slice = _image_blue_tail_slice(img_a)
     _assert_slice_diff(a_slice, base_slice, label="lora_a_vs_base")
+    a_vs_base = float(np.abs(a_slice - base_slice).mean())
 
     # Adapter B: apply delta to K slice only (should differ from adapter A).
     lora_b_dir = tmp_path / "zimage_lora_b"
@@ -234,8 +243,17 @@ def test_images_generations_per_request_lora_switching(omni_server: OmniServer, 
     b_slice = _image_blue_tail_slice(img_b)
     _assert_slice_diff(b_slice, base_slice, label="lora_b_vs_base")
     _assert_slice_diff(b_slice, a_slice, label="lora_b_vs_lora_a")
+    b_vs_base = float(np.abs(b_slice - base_slice).mean())
+    b_vs_a = float(np.abs(b_slice - a_slice).mean())
 
     # Ensure switching back to no-LoRA restores the base output.
     base_img_2 = _post_images(omni_server, _basic_payload())
     base_slice_2 = _image_blue_tail_slice(base_img_2)
     _assert_slice_close(base_slice_2, base_slice, label="base_after_reset")
+    base_reset = float(np.abs(base_slice_2 - base_slice).mean())
+
+    # Ensure LoRA effects are clearly above the baseline drift.
+    min_delta = base_reset + 0.5
+    assert a_vs_base > min_delta, f"lora_a_vs_base drift too small: {a_vs_base} <= {min_delta}"
+    assert b_vs_base > min_delta, f"lora_b_vs_base drift too small: {b_vs_base} <= {min_delta}"
+    assert b_vs_a > min_delta, f"lora_b_vs_lora_a drift too small: {b_vs_a} <= {min_delta}"
