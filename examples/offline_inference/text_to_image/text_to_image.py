@@ -10,6 +10,8 @@ import torch
 
 from vllm_omni.diffusion.data import DiffusionParallelConfig, logger
 from vllm_omni.entrypoints.omni import Omni
+from vllm_omni.lora.request import LoRARequest
+from vllm_omni.lora.utils import stable_lora_int_id
 from vllm_omni.outputs import OmniRequestOutput
 from vllm_omni.utils.platform_utils import detect_device_type, is_npu
 
@@ -107,6 +109,18 @@ def parse_args() -> argparse.Namespace:
         default=1,
         help="Number of GPUs used for tensor parallelism (TP) inside the DiT.",
     )
+    parser.add_argument(
+        "--lora-path",
+        type=str,
+        default=None,
+        help="Path to LoRA adapter folder (PEFT format). Loaded at initialization and used for generation.",
+    )
+    parser.add_argument(
+        "--lora-scale",
+        type=float,
+        default=1.0,
+        help="Scale factor for LoRA weights (default: 1.0).",
+    )
     return parser.parse_args()
 
 
@@ -159,6 +173,12 @@ def main():
     # Check if profiling is requested via environment variable
     profiler_enabled = bool(os.getenv("VLLM_TORCH_PROFILER_DIR"))
 
+    # Prepare LoRA kwargs for Omni initialization
+    omni_kwargs = {}
+    if args.lora_path:
+        omni_kwargs["lora_path"] = args.lora_path
+        print(f"Using LoRA from: {args.lora_path}")
+
     omni = Omni(
         model=args.model,
         vae_use_slicing=vae_use_slicing,
@@ -168,6 +188,7 @@ def main():
         parallel_config=parallel_config,
         enforce_eager=args.enforce_eager,
         enable_cpu_offload=args.enable_cpu_offload,
+        **omni_kwargs,
     )
 
     if profiler_enabled:
@@ -185,20 +206,37 @@ def main():
         f"ulysses_degree={args.ulysses_degree}, ring_degree={args.ring_degree}, cfg_parallel_size={args.cfg_parallel_size}"
     )
     print(f"  Image size: {args.width}x{args.height}")
+    if args.lora_path:
+        print(f"  LoRA: scale={args.lora_scale}")
     print(f"{'=' * 60}\n")
 
+    # Build LoRA request when --lora-path is set
+    lora_request = None
+    if args.lora_path:
+        lora_request_id = stable_lora_int_id(args.lora_path)
+        lora_request = LoRARequest(
+            lora_name=Path(args.lora_path).stem,
+            lora_int_id=lora_request_id,
+            lora_path=args.lora_path,
+        )
+
     generation_start = time.perf_counter()
-    outputs = omni.generate(
-        args.prompt,
-        negative_prompt=args.negative_prompt,
-        height=args.height,
-        width=args.width,
-        generator=generator,
-        true_cfg_scale=args.cfg_scale,
-        guidance_scale=args.guidance_scale,
-        num_inference_steps=args.num_inference_steps,
-        num_outputs_per_prompt=args.num_images_per_prompt,
-    )
+    gen_kwargs = {
+        "prompt": args.prompt,
+        "negative_prompt": args.negative_prompt,
+        "height": args.height,
+        "width": args.width,
+        "generator": generator,
+        "true_cfg_scale": args.cfg_scale,
+        "guidance_scale": args.guidance_scale,
+        "num_inference_steps": args.num_inference_steps,
+        "num_outputs_per_prompt": args.num_images_per_prompt,
+    }
+    if lora_request:
+        gen_kwargs["lora_request"] = lora_request
+        gen_kwargs["lora_scale"] = args.lora_scale
+
+    outputs = omni.generate(**gen_kwargs)
     generation_end = time.perf_counter()
     generation_time = generation_end - generation_start
 
