@@ -49,7 +49,7 @@ lora_request = LoRARequest(
 outputs = omni.generate(
     prompt="A piece of cheesecake",
     lora_request=lora_request,
-   # lora_scale=2.0, # can optionally pass lora_scale, default 1.0
+    lora_scale=2.0, # optional arg, default 1.0
 )
 ```
 
