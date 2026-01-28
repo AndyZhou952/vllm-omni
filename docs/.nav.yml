@@ -32,11 +32,12 @@ nav:
   - Features:
     - Sleep Mode: features/sleep_mode.md
     - Diffusion Features:
-      - Overview: user_guide/diffusion_acceleration.md
+      - Acceleration Overview: user_guide/diffusion_acceleration.md
       - TeaCache: user_guide/diffusion/teacache.md
       - Cache-DiT: user_guide/diffusion/cache_dit_acceleration.md
       - Parallelism Acceleration: user_guide/diffusion/parallelism_acceleration.md
       - CPU Offloading: user_guide/diffusion/cpu_offload_diffusion.md
+      - LoRA: user_guide/diffusion/lora.md
 - Developer Guide:
   - General:
     - contributing/README.md
