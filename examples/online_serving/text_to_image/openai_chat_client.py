@@ -13,8 +13,6 @@ from pathlib import Path
 
 import requests
 
-from vllm_omni.lora.utils import stable_lora_int_id
-
 
 def generate_image(
     prompt: str,
@@ -83,9 +81,6 @@ def generate_image(
             lora_body["scale"] = float(lora_scale)
         if lora_int_id is not None:
             lora_body["int_id"] = int(lora_int_id)
-        else:
-            # Derive stable ID from path if not provided
-            lora_body["int_id"] = stable_lora_int_id(lora_path)
         payload["lora"] = lora_body
 
     try:
