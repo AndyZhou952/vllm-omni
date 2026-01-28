@@ -10,9 +10,9 @@ import torch
 
 from vllm_omni.diffusion.data import DiffusionParallelConfig, logger
 from vllm_omni.entrypoints.omni import Omni
+from vllm_omni.inputs.data import OmniDiffusionSamplingParams
 from vllm_omni.lora.request import LoRARequest
 from vllm_omni.lora.utils import stable_lora_int_id
-from vllm_omni.inputs.data import OmniDiffusionSamplingParams
 from vllm_omni.outputs import OmniRequestOutput
 from vllm_omni.utils.platform_utils import detect_device_type, is_npu
 
@@ -223,11 +223,7 @@ def main():
 
     generation_start = time.perf_counter()
 
-    lora_kwargs = (
-        {"lora_request": lora_request, "lora_scale": args.lora_scale}
-        if lora_request
-        else {}
-    )
+    lora_kwargs = {"lora_request": lora_request, "lora_scale": args.lora_scale} if lora_request else {}
 
     outputs = omni.generate(
         {
