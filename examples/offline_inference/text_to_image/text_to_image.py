@@ -12,6 +12,7 @@ from vllm_omni.diffusion.data import DiffusionParallelConfig, logger
 from vllm_omni.entrypoints.omni import Omni
 from vllm_omni.lora.request import LoRARequest
 from vllm_omni.lora.utils import stable_lora_int_id
+from vllm_omni.inputs.data import OmniDiffusionSamplingParams
 from vllm_omni.outputs import OmniRequestOutput
 from vllm_omni.utils.platform_utils import detect_device_type, is_npu
 
@@ -221,22 +222,30 @@ def main():
         )
 
     generation_start = time.perf_counter()
-    gen_kwargs = {
-        "prompt": args.prompt,
-        "negative_prompt": args.negative_prompt,
-        "height": args.height,
-        "width": args.width,
-        "generator": generator,
-        "true_cfg_scale": args.cfg_scale,
-        "guidance_scale": args.guidance_scale,
-        "num_inference_steps": args.num_inference_steps,
-        "num_outputs_per_prompt": args.num_images_per_prompt,
-    }
-    if lora_request:
-        gen_kwargs["lora_request"] = lora_request
-        gen_kwargs["lora_scale"] = args.lora_scale
 
-    outputs = omni.generate(**gen_kwargs)
+    lora_kwargs = (
+        {"lora_request": lora_request, "lora_scale": args.lora_scale}
+        if lora_request
+        else {}
+    )
+
+    outputs = omni.generate(
+        {
+            "prompt": args.prompt,
+            "negative_prompt": args.negative_prompt,
+        },
+        OmniDiffusionSamplingParams(
+            height=args.height,
+            width=args.width,
+            generator=generator,
+            true_cfg_scale=args.cfg_scale,
+            guidance_scale=args.guidance_scale,
+            num_inference_steps=args.num_inference_steps,
+            num_outputs_per_prompt=args.num_images_per_prompt,
+            **lora_kwargs,
+        ),
+    )
+
     generation_end = time.perf_counter()
     generation_time = generation_end - generation_start
 
