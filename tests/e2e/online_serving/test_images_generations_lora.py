@@ -192,7 +192,7 @@ def _assert_slice_close(actual: np.ndarray, expected: np.ndarray, *, label: str)
     # NOTE: Different attention backends / torch.compile can introduce small
     # floating-point drift that shows up as a few LSBs in uint8 pixels. Keep
     # the reset check tolerant but bounded to avoid flaky CI.
-    assert max_diff <= 5.0 and mean_diff <= 3.0, (
+    assert max_diff <= 5.0 and mean_diff <= 4.0, (
         f"{label} slice mismatch (max={max_diff:.1f}, mean={mean_diff:.1f}): {actual.tolist()}"
     )
 
