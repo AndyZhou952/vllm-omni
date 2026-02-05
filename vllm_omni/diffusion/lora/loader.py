@@ -96,24 +96,52 @@ def _find_matching_param(
     """Find a model parameter that matches the target key.
 
     Handles prefix variations like 'transformer.' being present or not.
-    Uses dict-based lookup for O(1) direct/prefix matching before fallback.
     """
-    # Build parameter dict once for efficient lookups
     param_dict = dict(model.named_parameters())
 
-    # 1. Direct match (O(1) lookup)
     if target_key in param_dict:
         return target_key, param_dict[target_key]
 
-    # 2. Try without 'transformer.' prefix (O(1) lookup)
     stripped = target_key.removeprefix("transformer.")
     if stripped in param_dict:
         return stripped, param_dict[stripped]
 
-    # 3. Suffix match fallback (O(n) - only when needed)
     for name, param in param_dict.items():
         if name.endswith(stripped) or stripped.endswith(name):
             return name, param
+
+    return None
+
+
+# Mapping from packed layer suffix to its constituent sublayers
+PACKED_MODULES_MAPPING = {
+    "to_qkv": ["to_q", "to_k", "to_v"],
+    "add_kv_proj": ["add_q_proj", "add_k_proj", "add_v_proj"],
+}
+
+# Reverse mapping: sublayer -> (packed_layer, index)
+SUBLAYER_TO_PACKED = {}
+for packed, sublayers in PACKED_MODULES_MAPPING.items():
+    for idx, sub in enumerate(sublayers):
+        SUBLAYER_TO_PACKED[sub] = (packed, idx, len(sublayers))
+
+
+def _get_packed_layer_key(base_key: str) -> tuple[str, int, int] | None:
+    """Check if a base key corresponds to a sublayer of a packed layer.
+
+    Returns (packed_key, slice_index, num_slices) or None.
+    """
+    # Extract the layer suffix (e.g., "to_q" from "transformer_blocks.0.attn.to_q.weight")
+    parts = base_key.replace(".weight", "").split(".")
+    if not parts:
+        return None
+
+    suffix = parts[-1]
+    if suffix in SUBLAYER_TO_PACKED:
+        packed_suffix, idx, num_slices = SUBLAYER_TO_PACKED[suffix]
+        # Rebuild the key with packed suffix
+        packed_key = ".".join(parts[:-1] + [packed_suffix]) + ".weight"
+        return packed_key, idx, num_slices
 
     return None
 
@@ -127,6 +155,11 @@ def _apply_lora_to_model(
     For each LoRA pair (lora_A, lora_B), computes:
         delta_W = lora_B @ lora_A
     and adds it to the base weight.
+
+    Handles packed layers (e.g., to_qkv = [to_q, to_k, to_v]) by:
+    1. Grouping sublayer LoRAs together
+    2. Computing individual deltas
+    3. Concatenating and applying to the packed weight
 
     Returns:
         Number of LoRA layers successfully applied.
@@ -143,45 +176,63 @@ def _apply_lora_to_model(
             base_key = _get_base_layer_key(key)
             lora_pairs.setdefault(base_key, {})["lora_B"] = value
 
-    # Apply each LoRA pair to the corresponding base weight
+    # Separate direct matches from packed layer sublayers
+    direct_pairs: dict[str, dict[str, torch.Tensor]] = {}
+    packed_sublayers: dict[str, dict[int, dict[str, torch.Tensor]]] = {}
+
+    param_dict = dict(model.named_parameters())
+
     for base_key, lora_weights in lora_pairs.items():
         if "lora_A" not in lora_weights or "lora_B" not in lora_weights:
             logger.warning("Incomplete LoRA pair for %s, skipping", base_key)
             continue
 
+        # Check if this is a direct match
+        match = _find_matching_param(model, base_key)
+        if match is not None:
+            direct_pairs[base_key] = lora_weights
+            continue
+
+        # Check if this is a sublayer of a packed layer
+        packed_info = _get_packed_layer_key(base_key)
+        if packed_info is not None:
+            packed_key, slice_idx, num_slices = packed_info
+            # Verify the packed layer exists
+            packed_match = _find_matching_param(model, packed_key)
+            if packed_match is not None:
+                actual_packed_key = packed_match[0]
+                packed_sublayers.setdefault(actual_packed_key, {})[slice_idx] = lora_weights
+                logger.debug(
+                    "Grouped %s as slice %d of packed layer %s",
+                    base_key, slice_idx, actual_packed_key
+                )
+                continue
+
+        logger.warning("No matching parameter found for %s", base_key)
+
+    # Apply direct LoRA pairs
+    for base_key, lora_weights in direct_pairs.items():
         lora_a = lora_weights["lora_A"]
         lora_b = lora_weights["lora_B"]
 
-        # Find the matching parameter in the model
         match = _find_matching_param(model, base_key)
         if match is None:
-            logger.warning("No matching parameter found for %s", base_key)
             continue
 
         param_name, param = match
 
-        # Compute delta: delta_W = lora_B @ lora_A
-        # lora_A shape: (rank, in_features)
-        # lora_B shape: (out_features, rank)
-        # delta shape: (out_features, in_features)
         with torch.no_grad():
             delta = lora_b.to(param.device, param.dtype) @ lora_a.to(
                 param.device, param.dtype
             )
 
-            # Handle shape mismatches (e.g., packed QKV weights)
             if delta.shape != param.shape:
                 logger.debug(
                     "Shape mismatch for %s: delta %s vs param %s",
-                    param_name,
-                    delta.shape,
-                    param.shape,
+                    param_name, delta.shape, param.shape,
                 )
-                # For packed weights like qkv, the LoRA might be for a subset
                 if len(delta.shape) == 2 and len(param.shape) == 2:
                     if delta.shape[1] == param.shape[1]:
-                        # Same input dim, different output - likely packed
-                        # Apply to the first portion that matches
                         out_dim = delta.shape[0]
                         param.data[:out_dim, :] += delta
                         applied_count += 1
@@ -195,6 +246,70 @@ def _apply_lora_to_model(
             param.data += delta
             applied_count += 1
             logger.debug("Applied LoRA to %s", param_name)
+
+    # Apply packed layer LoRAs
+    for packed_key, sublayer_dict in packed_sublayers.items():
+        param = param_dict[packed_key]
+
+        # Determine expected number of slices from the packed module mapping
+        num_slices = len(sublayer_dict)  # default
+        for packed_name, sublayers in PACKED_MODULES_MAPPING.items():
+            if packed_name in packed_key:
+                num_slices = len(sublayers)
+                break
+
+        # Compute deltas for available slices
+        deltas: list[torch.Tensor | None] = [None] * num_slices
+        slice_out_dims: list[int] = []
+
+        for slice_idx, lora_weights in sublayer_dict.items():
+            lora_a = lora_weights["lora_A"]
+            lora_b = lora_weights["lora_B"]
+            delta = lora_b.to(param.device, param.dtype) @ lora_a.to(
+                param.device, param.dtype
+            )
+            deltas[slice_idx] = delta
+            slice_out_dims.append(delta.shape[0])
+
+        if not slice_out_dims:
+            logger.warning("No valid slices for packed layer %s", packed_key)
+            continue
+
+        # For packed layers, each slice should have the same output dim
+        # Total output = num_slices * slice_out_dim
+        slice_out_dim = slice_out_dims[0]
+        expected_total = num_slices * slice_out_dim
+
+        with torch.no_grad():
+            if param.shape[0] == expected_total:
+                # Apply each slice to its portion of the packed weight
+                for slice_idx, delta in enumerate(deltas):
+                    if delta is not None:
+                        start = slice_idx * slice_out_dim
+                        end = start + slice_out_dim
+                        param.data[start:end, :] += delta
+                        applied_count += 1
+                        logger.debug(
+                            "Applied LoRA slice %d to packed layer %s [%d:%d]",
+                            slice_idx, packed_key, start, end
+                        )
+            else:
+                # Fallback: concatenate available deltas and apply
+                valid_deltas = [d for d in deltas if d is not None]
+                if valid_deltas:
+                    combined = torch.cat(valid_deltas, dim=0)
+                    if combined.shape[0] <= param.shape[0] and combined.shape[1] == param.shape[1]:
+                        param.data[:combined.shape[0], :] += combined
+                        applied_count += len(valid_deltas)
+                        logger.debug(
+                            "Applied %d LoRA slices to packed layer %s (partial)",
+                            len(valid_deltas), packed_key
+                        )
+                    else:
+                        logger.warning(
+                            "Shape mismatch for packed layer %s: combined %s vs param %s",
+                            packed_key, combined.shape, param.shape
+                        )
 
     return applied_count
 
@@ -311,12 +426,19 @@ def load_lora_weights(
     elif lora_format == "unknown":
         raise ValueError(f"Unknown LoRA format in {lora_path}")
 
-    # Log debug info about the converted state dict
     lora_keys = [k for k in state_dict.keys() if "lora_A" in k]
-    logger.debug(
+    logger.info(
         "Converted state dict has %d LoRA layers, example keys: %s",
         len(lora_keys),
         lora_keys[:3] if lora_keys else "none",
+    )
+
+    # Debug: show model parameter names for comparison
+    model_params = list(dict(transformer.named_parameters()).keys())
+    logger.info(
+        "Model has %d parameters, example keys: %s",
+        len(model_params),
+        model_params[:3] if model_params else "none",
     )
 
     if fuse:
