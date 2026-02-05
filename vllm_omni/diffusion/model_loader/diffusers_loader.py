@@ -24,6 +24,7 @@ from vllm.model_executor.model_loader.weight_utils import (
 from vllm.utils.torch_utils import set_default_torch_dtype
 
 from vllm_omni.diffusion.data import OmniDiffusionConfig
+from vllm_omni.diffusion.lora.loader import load_lora_weights
 from vllm_omni.diffusion.registry import initialize_model
 
 logger = init_logger(__name__)
@@ -207,6 +208,19 @@ class DiffusersPipelineLoader:
             allow_patterns_overrides=None,
         )
 
+    def _get_model_type(self, od_config: OmniDiffusionConfig) -> str:
+        """Map model class name to model type for LoRA conversion."""
+        mapping = {
+            "QwenImagePipeline": "qwen_image",
+            "QwenImageEditPipeline": "qwen_image",
+            "QwenImageEditPlusPipeline": "qwen_image",
+            "QwenImageLayeredPipeline": "qwen_image",
+            "ZImagePipeline": "z_image",
+            "WanPipeline": "wan",
+            "WanImageToVideoPipeline": "wan",
+        }
+        return mapping.get(od_config.model_class_name, "unknown")
+
     def load_model(self, od_config: OmniDiffusionConfig, load_device: str) -> nn.Module:
         """Load a model with the given configurations."""
         target_device = torch.device(load_device)
@@ -217,6 +231,18 @@ class DiffusersPipelineLoader:
             logger.debug("Loading weights on %s ...", load_device)
             # Quantization does not happen in `load_weights` but after it
             self.load_weights(model)
+
+            # Load LoRA if configured
+            if od_config.lora_path:
+                model_type = self._get_model_type(od_config)
+                model.transformer = load_lora_weights(
+                    transformer=model.transformer,
+                    lora_path=od_config.lora_path,
+                    model_type=model_type,
+                    adapter_name="default",
+                    fuse=od_config.lora_fuse,
+                )
+
         return model.eval()
 
     def load_weights(self, model: nn.Module) -> None:
