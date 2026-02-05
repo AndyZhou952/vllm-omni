@@ -126,6 +126,18 @@ for packed, sublayers in PACKED_MODULES_MAPPING.items():
         SUBLAYER_TO_PACKED[sub] = (packed, idx, len(sublayers))
 
 
+def _normalize_key(key: str) -> str:
+    """Normalize LoRA key naming conventions to match model parameters.
+
+    Handles:
+    - Sequential index: .to_out.0. -> .to_out.
+    - Other common naming variations
+    """
+    # Handle Sequential module index (diffusers uses .to_out.0. for nn.Sequential)
+    normalized = key.replace(".to_out.0.", ".to_out.")
+    return normalized
+
+
 def _get_packed_layer_key(base_key: str) -> tuple[str, int, int] | None:
     """Check if a base key corresponds to a sublayer of a packed layer.
 
@@ -170,10 +182,10 @@ def _apply_lora_to_model(
     # Group lora_A and lora_B weights by base layer
     for key, value in state_dict.items():
         if ".lora_A.weight" in key:
-            base_key = _get_base_layer_key(key)
+            base_key = _normalize_key(_get_base_layer_key(key))
             lora_pairs.setdefault(base_key, {})["lora_A"] = value
         elif ".lora_B.weight" in key:
-            base_key = _get_base_layer_key(key)
+            base_key = _normalize_key(_get_base_layer_key(key))
             lora_pairs.setdefault(base_key, {})["lora_B"] = value
 
     # Separate direct matches from packed layer sublayers
@@ -444,8 +456,12 @@ def load_lora_weights(
     if fuse:
         # Directly apply LoRA delta to base weights (recommended for distilled)
         logger.info("Fusing LoRA weights directly into base model")
+        num_lora_pairs = len(lora_keys)
         applied = _apply_lora_to_model(transformer, state_dict)
-        logger.info("Successfully applied %d LoRA layers", applied)
+        logger.info(
+            "Successfully applied %d LoRA layers (%.1f%% of %d pairs)",
+            applied, 100.0 * applied / num_lora_pairs if num_lora_pairs > 0 else 0, num_lora_pairs
+        )
     else:
         # Use PEFT adapter system
         logger.info("Applying LoRA via PEFT adapter system")
