@@ -13,11 +13,12 @@ from vllm.v1.worker.utils import request_memory
 from vllm.v1.worker.workspace import init_workspace_manager
 
 from vllm_omni.worker.gpu_ar_model_runner import GPUARModelRunner
+from vllm_omni.worker.mixins import OmniWorkerMixin
 
 logger = init_logger(__name__)
 
 
-class GPUARWorker(GPUWorker):
+class GPUARWorker(OmniWorkerMixin, GPUWorker):
     """GPU worker for autoregressive omni model stages.
 
     Extends the base GPUWorker to initialize and manage autoregressive
@@ -89,6 +90,11 @@ class GPUARWorker(GPUWorker):
         # Initialize workspace manager
         num_ubatches = 2 if self.vllm_config.parallel_config.enable_dbo else 1
         init_workspace_manager(self.device, num_ubatches)
+
+        if self.use_v2_model_runner:
+            # OMNI: v2 model runner does not yet include omni hooks.
+            logger.warning("OMNI GPUARWorker forces v1 model runner for omni hooks.")
+            self.use_v2_model_runner = False
 
         # Construct the model runner
         self.model_runner = GPUARModelRunner(self.vllm_config, self.device)

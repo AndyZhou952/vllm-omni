@@ -14,7 +14,7 @@ from vllm_omni.inputs.data import OmniDiffusionSamplingParams
 from vllm_omni.lora.request import LoRARequest
 from vllm_omni.lora.utils import stable_lora_int_id
 from vllm_omni.outputs import OmniRequestOutput
-from vllm_omni.utils.platform_utils import detect_device_type, is_npu
+from vllm_omni.platforms import current_omni_platform
 
 
 def parse_args() -> argparse.Namespace:
@@ -76,6 +76,11 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "--enable-cache-dit-summary",
+        action="store_true",
+        help="Enable cache-dit summary logging after diffusion forward passes.",
+    )
+    parser.add_argument(
         "--ulysses_degree",
         type=int,
         default=1,
@@ -105,6 +110,17 @@ def parse_args() -> argparse.Namespace:
         help="Enable CPU offloading for diffusion models.",
     )
     parser.add_argument(
+        "--enable-layerwise-offload",
+        action="store_true",
+        help="Enable layerwise (blockwise) offloading on DiT modules.",
+    )
+    parser.add_argument(
+        "--layerwise-num-gpu-layers",
+        type=int,
+        default=1,
+        help="Number of ready layers (blocks) to keep on GPU during generation.",
+    )
+    parser.add_argument(
         "--tensor_parallel_size",
         type=int,
         default=1,
@@ -122,17 +138,22 @@ def parse_args() -> argparse.Namespace:
         default=1.0,
         help="Scale factor for LoRA weights (default: 1.0).",
     )
+    parser.add_argument(
+        "--vae_use_slicing",
+        action="store_true",
+        help="Enable VAE slicing for memory optimization.",
+    )
+    parser.add_argument(
+        "--vae_use_tiling",
+        action="store_true",
+        help="Enable VAE tiling for memory optimization.",
+    )
     return parser.parse_args()
 
 
 def main():
     args = parse_args()
-    device = detect_device_type()
-    generator = torch.Generator(device=device).manual_seed(args.seed)
-
-    # Enable VAE memory optimizations on NPU
-    vae_use_slicing = is_npu()
-    vae_use_tiling = is_npu()
+    generator = torch.Generator(device=current_omni_platform.device_type).manual_seed(args.seed)
 
     # Configure cache based on backend type
     cache_config = None
@@ -182,10 +203,13 @@ def main():
 
     omni = Omni(
         model=args.model,
-        vae_use_slicing=vae_use_slicing,
-        vae_use_tiling=vae_use_tiling,
+        enable_layerwise_offload=args.enable_layerwise_offload,
+        layerwise_num_gpu_layers=args.layerwise_num_gpu_layers,
+        vae_use_slicing=args.vae_use_slicing,
+        vae_use_tiling=args.vae_use_tiling,
         cache_backend=args.cache_backend,
         cache_config=cache_config,
+        enable_cache_dit_summary=args.enable_cache_dit_summary,
         parallel_config=parallel_config,
         enforce_eager=args.enforce_eager,
         enable_cpu_offload=args.enable_cpu_offload,

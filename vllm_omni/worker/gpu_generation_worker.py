@@ -13,11 +13,12 @@ from vllm.v1.worker.utils import request_memory
 from vllm.v1.worker.workspace import init_workspace_manager
 
 from vllm_omni.worker.gpu_generation_model_runner import GPUGenerationModelRunner
+from vllm_omni.worker.mixins import OmniWorkerMixin
 
 logger = init_logger(__name__)
 
 
-class GPUGenerationWorker(GPUWorker):
+class GPUGenerationWorker(OmniWorkerMixin, GPUWorker):
     """GPU Worker for Generation model (non-autoregressive waveform generation).
 
     Usage in stage config:
@@ -89,6 +90,11 @@ class GPUGenerationWorker(GPUWorker):
         # Initialize workspace manager
         num_ubatches = 2 if self.vllm_config.parallel_config.enable_dbo else 1
         init_workspace_manager(self.device, num_ubatches)
+
+        if self.use_v2_model_runner:
+            # OMNI: v2 model runner does not yet include omni hooks.
+            logger.warning("OMNI GPUGenerationWorker forces v1 model runner for omni hooks.")
+            self.use_v2_model_runner = False
 
         self.model_runner = GPUGenerationModelRunner(self.vllm_config, self.device)
 
