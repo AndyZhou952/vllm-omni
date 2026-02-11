@@ -148,12 +148,29 @@ class DiffusionWorker:
         """Execute a forward pass by delegating to the model runner."""
         assert self.model_runner is not None, "Model runner not initialized"
         if self.lora_manager is not None:
+            lora_req = req.sampling_params.lora_request
+            logger.info(
+                "Worker %s LoRA before activation: request_ids=%s, name=%s, path=%s, int_id=%s, scale=%.4f, active_before=%s",
+                self.rank,
+                req.request_ids,
+                lora_req.lora_name if lora_req is not None else None,
+                lora_req.lora_path if lora_req is not None else None,
+                lora_req.lora_int_id if lora_req is not None else None,
+                req.sampling_params.lora_scale,
+                self.lora_manager._active_adapter_id,
+            )
             try:
-                self.lora_manager.set_active_adapter(req.sampling_params.lora_request, req.sampling_params.lora_scale)
+                self.lora_manager.set_active_adapter(lora_req, req.sampling_params.lora_scale)
             except Exception as exc:
                 if req.sampling_params.lora_request is not None:
                     raise
                 logger.warning("LoRA activation skipped: %s", exc)
+            logger.info(
+                "Worker %s LoRA after activation: request_ids=%s, active_after=%s",
+                self.rank,
+                req.request_ids,
+                self.lora_manager._active_adapter_id,
+            )
         return self.model_runner.execute_model(req)
 
     def load_weights(self, weights) -> set[str]:

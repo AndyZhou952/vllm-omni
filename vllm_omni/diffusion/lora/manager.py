@@ -191,8 +191,8 @@ class DiffusionLoRAManager:
             return
 
         adapter_id = lora_request.lora_int_id
-        logger.debug(
-            "Setting active adapter: id=%d, name=%s, path=%s, scale=%.2f, cache_size=%d/%d",
+        logger.info(
+            "Setting active adapter: id=%d, name=%s, path=%s, scale=%.4f, cache_size=%d/%d",
             adapter_id,
             lora_request.lora_name,
             lora_request.lora_path,
@@ -280,6 +280,11 @@ class DiffusionLoRAManager:
 
     def _replace_layers_with_lora(self, peft_helper: PEFTHelper) -> None:
         self._ensure_max_lora_rank(peft_helper.r)
+        logger.info(
+            "Preparing LoRA replacement: target_modules=%s, expected_modules_count=%d",
+            getattr(peft_helper, "target_modules", None),
+            len(self._expected_lora_modules),
+        )
 
         target_modules = getattr(peft_helper, "target_modules", None)
         target_modules_list: list[str] | None = None
@@ -307,6 +312,10 @@ class DiffusionLoRAManager:
             fully_sharded_loras=False,
         )
 
+        candidate_count = 0
+        target_filtered_count = 0
+        replaced_count = 0
+        not_replaceable_count = 0
         for component_name in ("transformer", "transformer_2", "dit"):
             if not hasattr(self.pipeline, component_name):
                 continue
@@ -321,6 +330,7 @@ class DiffusionLoRAManager:
                 if isinstance(module, BaseLayerWithLoRA) or "base_layer" in module_name.split("."):
                     continue
 
+                candidate_count += 1
                 full_module_name = f"{component_name}.{module_name}"
                 if full_module_name in self._lora_modules:
                     logger.debug("Layer %s already replaced, skipping", full_module_name)
@@ -340,6 +350,7 @@ class DiffusionLoRAManager:
                                     break
 
                     if not should_replace:
+                        target_filtered_count += 1
                         continue
 
                 lora_layer = from_layer_diffusion(
@@ -353,7 +364,18 @@ class DiffusionLoRAManager:
                 if lora_layer is not module and isinstance(lora_layer, BaseLayerWithLoRA):
                     replace_submodule(component, module_name, lora_layer)
                     self._lora_modules[full_module_name] = lora_layer
+                    replaced_count += 1
                     logger.debug("Replaced layer: %s -> %s", full_module_name, type(lora_layer).__name__)
+                else:
+                    not_replaceable_count += 1
+        logger.info(
+            "LoRA replacement summary: candidates=%d, replaced=%d, target_filtered=%d, not_replaceable=%d, total_lora_layers=%d",
+            candidate_count,
+            replaced_count,
+            target_filtered_count,
+            not_replaceable_count,
+            len(self._lora_modules),
+        )
 
     def _ensure_max_lora_rank(self, min_rank: int) -> None:
         """Ensure LoRA buffers can accommodate adapters up to `min_rank`.
@@ -423,6 +445,10 @@ class DiffusionLoRAManager:
 
         logger.info("Activating adapter: id=%d", adapter_id)
         lora_model = self._registered_adapters[adapter_id]
+        activated_layers = 0
+        reset_layers = 0
+        packed_fallbacks = 0
+        shape_mismatch_skips = 0
 
         # activate weights in each LoRA layer
         for full_module_name, lora_layer in self._lora_modules.items():
@@ -434,6 +460,8 @@ class DiffusionLoRAManager:
                     prefix, _, packed_suffix = full_module_name.rpartition(".")
                     sub_suffixes = self._get_packed_sublayer_suffixes(packed_suffix, n_slices)
                     if sub_suffixes is None:
+                        packed_fallbacks += 1
+                        reset_layers += 1
                         lora_layer.reset_lora(0)
                         continue
 
@@ -450,6 +478,8 @@ class DiffusionLoRAManager:
                         sub_loras.append(sub_lora if isinstance(sub_lora, LoRALayerWeights) else None)
 
                     if not any_found:
+                        packed_fallbacks += 1
+                        reset_layers += 1
                         lora_layer.reset_lora(0)
                         continue
 
@@ -465,6 +495,7 @@ class DiffusionLoRAManager:
                         lora_b_list.append(sub_lora.lora_b * scale)
 
                     lora_layer.set_lora(index=0, lora_a=lora_a_list, lora_b=lora_b_list)
+                    activated_layers += 1
                     logger.debug(
                         "Activated packed LoRA for %s via submodules=%s (scale=%.2f)",
                         full_module_name,
@@ -472,6 +503,7 @@ class DiffusionLoRAManager:
                         scale,
                     )
                 else:
+                    reset_layers += 1
                     lora_layer.reset_lora(0)
                 continue
 
@@ -485,6 +517,7 @@ class DiffusionLoRAManager:
                     for b in lora_weights.lora_b
                 ]
                 lora_layer.set_lora(index=0, lora_a=lora_a_list, lora_b=lora_b_list)
+                activated_layers += 1
                 logger.debug(
                     "Activated packed LoRA for %s (scale=%.2f)",
                     full_module_name,
@@ -497,11 +530,15 @@ class DiffusionLoRAManager:
             if n_slices > 1:
                 output_slices = getattr(lora_layer, "output_slices", None)
                 if output_slices is None:
+                    packed_fallbacks += 1
+                    reset_layers += 1
                     lora_layer.reset_lora(0)
                     continue
 
                 total = sum(output_slices)
                 if lora_weights.lora_b.shape[0] != total:
+                    shape_mismatch_skips += 1
+                    reset_layers += 1
                     logger.warning(
                         "Skipping LoRA for %s due to shape mismatch: lora_b[0]=%d != sum(output_slices)=%d",
                         full_module_name,
@@ -515,6 +552,7 @@ class DiffusionLoRAManager:
                 lora_a_list = [lora_weights.lora_a] * n_slices
                 lora_b_list = [b * scale for b in b_splits]
                 lora_layer.set_lora(index=0, lora_a=lora_a_list, lora_b=lora_b_list)
+                activated_layers += 1
                 logger.debug(
                     "Activated fused LoRA for packed layer %s (scale=%.2f)",
                     full_module_name,
@@ -524,6 +562,7 @@ class DiffusionLoRAManager:
 
             scaled_lora_b = lora_weights.lora_b * scale
             lora_layer.set_lora(index=0, lora_a=lora_weights.lora_a, lora_b=scaled_lora_b)
+            activated_layers += 1
             logger.debug(
                 "Activated LoRA for %s: lora_a shape=%s, lora_b shape=%s, scale=%.2f",
                 full_module_name,
@@ -533,6 +572,15 @@ class DiffusionLoRAManager:
             )
 
         self._active_adapter_id = adapter_id
+        logger.info(
+            "LoRA activation summary: adapter_id=%d, activated_layers=%d, reset_layers=%d, packed_fallbacks=%d, shape_mismatch_skips=%d, managed_layers=%d",
+            adapter_id,
+            activated_layers,
+            reset_layers,
+            packed_fallbacks,
+            shape_mismatch_skips,
+            len(self._lora_modules),
+        )
 
     def _deactivate_all_adapters(self) -> None:
         logger.info("Deactivating all adapters: %d layers", len(self._lora_modules))

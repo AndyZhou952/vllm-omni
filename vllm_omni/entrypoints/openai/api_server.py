@@ -973,6 +973,14 @@ async def generate_images(request: ImageGenerationRequest, raw_request: Request)
         )
 
         request_id = f"img_gen_{uuid.uuid4().hex}"
+        logger.info(
+            "LoRA request parsed for %s: name=%s, path=%s, int_id=%s, scale=%s",
+            request_id,
+            lora_request.lora_name if lora_request is not None else None,
+            lora_request.lora_path if lora_request is not None else None,
+            lora_request.lora_int_id if lora_request is not None else None,
+            lora_scale,
+        )
 
         logger.info(f"Generating {request.n} image(s) {size_str}")
 

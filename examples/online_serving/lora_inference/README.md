@@ -1,9 +1,11 @@
 # LoRA Inference(Diffusion)
 
-This example shows how to use **per-request LoRA** with vLLM-Omni diffusion models via the OpenAI-compatible Chat Completions API.
+This example shows how to use **per-request LoRA** with vLLM-Omni diffusion models via:
+- OpenAI-compatible Chat Completions API (`/v1/chat/completions`)
+- OpenAI-compatible Images API (`/v1/images/generations`)
 
 > Note: The LoRA adapter path must be readable on the **server** machine (usually a local path or a mounted directory).
-> Note: This example uses `/v1/chat/completions`. LoRA payloads for other OpenAI endpoints are not implemented here.
+> Note: Image verification scripts in this folder use `/v1/images/generations` with request body field `lora`.
 
 ## Start Server
 
@@ -42,6 +44,32 @@ python openai_chat_client.py \
   --lora-scale 1.0 \
   --output output.png
 ```
+
+## Verify LoRA effect (`/v1/images/generations`)
+
+Run a deterministic scale sweep (same prompt + same seed):
+
+```bash
+export SERVER=http://localhost:8091
+export LORA_PATH=/path/to/lora_adapter
+export PROMPT="MIA_char, standing in a new york city"
+bash run_curl_lora_verify_images.sh
+```
+
+Then compute quantitative comparisons:
+
+```bash
+python verify_lora_online.py \
+  --server "$SERVER" \
+  --lora-path "$LORA_PATH" \
+  --prompt "$PROMPT" \
+  --out-dir lora_verify_output
+```
+
+Interpretation:
+- `baseline ~= lora_scale_0` is expected.
+- `lora_scale_0 != lora_scale_1` indicates LoRA is actually applied.
+- If `lora_scale_0 ~= lora_scale_1`, LoRA is likely loaded but ineffective (target-module mismatch, per-layer reset, shape mismatch, or near-zero effective weights).
 
 ## LoRA Format
 
