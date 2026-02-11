@@ -120,12 +120,15 @@ class DiffusionWorker:
                 memory_pool_context_fn=self._maybe_get_memory_pool_context,
             )
         assert self.model_runner.pipeline is not None
+        # When lora_fuse=True, LoRA weights are already fused into the model
+        # during loading, so don't pass lora_path to manager (avoid double load)
+        static_lora_path = None if self.od_config.lora_fuse else self.od_config.lora_path
         self.lora_manager = DiffusionLoRAManager(
             pipeline=self.model_runner.pipeline,
             device=self.device,
             dtype=self.od_config.dtype,
             max_cached_adapters=self.od_config.max_cpu_loras,
-            lora_path=self.od_config.lora_path,
+            lora_path=static_lora_path,
             lora_scale=self.od_config.lora_scale,
         )
         logger.info(f"Worker {self.rank}: Initialization complete.")

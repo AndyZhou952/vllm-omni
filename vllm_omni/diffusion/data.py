@@ -281,6 +281,7 @@ class OmniDiffusionConfig:
     lora_path: str | None = None
     lora_scale: float = 1.0
     max_cpu_loras: int | None = None
+    lora_fuse: bool = False  # Fuse LoRA into base weights (recommended for distilled)
 
     output_type: str = "pil"
 
