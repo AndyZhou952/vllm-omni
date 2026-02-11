@@ -62,6 +62,29 @@ python -m examples.offline_inference.lora_inference.lora_inference \
     --output output_no_lora.png
 ```
 
+### Scale sweep (none/0/1/5/50)
+
+Generate 5 deterministic images for the same prompt and compare differences:
+
+```bash
+python -m examples.offline_inference.lora_inference.lora_scale_sweep \
+    --model /home/andy/model/stable-diffusion-3.5-medium \
+    --lora-path /home/andy/model/SD3.5M-FlowGRPO-GenEval \
+    --prompt "MIA_char, standing in a new york city" \
+    --seed 42 \
+    --steps 15 \
+    --out-dir offline_lora_sweep_output
+```
+
+The script saves:
+- `no_lora.png`
+- `lora_scale_0.png`
+- `lora_scale_1.png`
+- `lora_scale_5.png`
+- `lora_scale_50.png`
+
+And prints SHA256 + MSE diagnostics to indicate whether LoRA scales are having measurable effect.
+
 ## Parameters
 
 ### LoRA Parameters
@@ -105,4 +128,8 @@ lora_adapter/
 ??? abstract "lora_inference.py"
     ``````py
     --8<-- "examples/offline_inference/lora_inference/lora_inference.py"
+    ``````
+??? abstract "lora_scale_sweep.py"
+    ``````py
+    --8<-- "examples/offline_inference/lora_inference/lora_scale_sweep.py"
     ``````

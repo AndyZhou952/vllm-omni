@@ -3,7 +3,8 @@
 Verify LoRA influence for /v1/images/generations with deterministic A/B runs.
 
 Outputs:
-  - baseline.png (no LoRA)
+  - baseline_pre.png (no LoRA before any LoRA request)
+  - baseline_post_wrap.png (no LoRA after first LoRA request)
   - lora_scale_0.png
   - lora_scale_05.png
   - lora_scale_1.png
@@ -93,7 +94,7 @@ def main() -> int:
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    base = generate_image(
+    baseline_pre = generate_image(
         server=args.server,
         prompt=args.prompt,
         size=args.size,
@@ -114,6 +115,15 @@ def main() -> int:
             "local_path": args.lora_path,
             "scale": 0.0,
         },
+    )
+    baseline_post_wrap = generate_image(
+        server=args.server,
+        prompt=args.prompt,
+        size=args.size,
+        steps=args.steps,
+        guidance_scale=args.guidance_scale,
+        seed=args.seed,
+        lora_payload=None,
     )
     l05 = generate_image(
         server=args.server,
@@ -142,38 +152,52 @@ def main() -> int:
         },
     )
 
-    base_path = out_dir / "baseline.png"
+    base_pre_path = out_dir / "baseline_pre.png"
+    base_post_path = out_dir / "baseline_post_wrap.png"
     l0_path = out_dir / "lora_scale_0.png"
     l05_path = out_dir / "lora_scale_05.png"
     l1_path = out_dir / "lora_scale_1.png"
-    base.save(base_path)
+    baseline_pre.save(base_pre_path)
+    baseline_post_wrap.save(base_post_path)
     l0.save(l0_path)
     l05.save(l05_path)
     l1.save(l1_path)
 
-    mse_base_l0 = mse(base, l0)
-    mse_base_l1 = mse(base, l1)
+    mse_base_pre_base_post = mse(baseline_pre, baseline_post_wrap)
+    mse_base_pre_l0 = mse(baseline_pre, l0)
+    mse_base_pre_l1 = mse(baseline_pre, l1)
+    mse_base_post_l0 = mse(baseline_post_wrap, l0)
+    mse_base_post_l1 = mse(baseline_post_wrap, l1)
     mse_l0_l1 = mse(l0, l1)
 
     print("Saved images:")
-    print(f"  {base_path} sha256={sha256(base_path)}")
+    print(f"  {base_pre_path} sha256={sha256(base_pre_path)}")
+    print(f"  {base_post_path} sha256={sha256(base_post_path)}")
     print(f"  {l0_path} sha256={sha256(l0_path)}")
     print(f"  {l05_path} sha256={sha256(l05_path)}")
     print(f"  {l1_path} sha256={sha256(l1_path)}")
     print("")
     print("MSE metrics:")
-    print(f"  baseline vs lora_scale_0  : {mse_base_l0:.6f}")
-    print(f"  baseline vs lora_scale_1  : {mse_base_l1:.6f}")
+    print(f"  baseline_pre vs baseline_post_wrap : {mse_base_pre_base_post:.6f}")
+    print(f"  baseline_pre vs lora_scale_0       : {mse_base_pre_l0:.6f}")
+    print(f"  baseline_pre vs lora_scale_1       : {mse_base_pre_l1:.6f}")
+    print(f"  baseline_post_wrap vs lora_scale_0 : {mse_base_post_l0:.6f}")
+    print(f"  baseline_post_wrap vs lora_scale_1 : {mse_base_post_l1:.6f}")
     print(f"  lora_scale_0 vs scale_1   : {mse_l0_l1:.6f}")
 
-    near_identical_base_l0 = mse_base_l0 <= args.mse_threshold
+    near_identical_post_l0 = mse_base_post_l0 <= args.mse_threshold
     has_lora_effect = mse_l0_l1 > args.mse_threshold
 
     print("")
-    if near_identical_base_l0:
-        print("CHECK PASS: baseline ~= scale=0.0 (expected).")
+    if mse_base_pre_base_post > args.mse_threshold:
+        print("CHECK INFO: baseline_pre != baseline_post_wrap (wrapper insertion or runtime state changed baseline).")
     else:
-        print("CHECK WARN: baseline != scale=0.0 (possible nondeterminism or pipeline variance).")
+        print("CHECK INFO: baseline_pre ~= baseline_post_wrap.")
+
+    if near_identical_post_l0:
+        print("CHECK PASS: baseline_post_wrap ~= scale=0.0 (expected for deactivated LoRA).")
+    else:
+        print("CHECK WARN: baseline_post_wrap != scale=0.0 (possible nondeterminism or unexpected state).")
 
     if has_lora_effect:
         print("CHECK PASS: scale=0.0 != scale=1.0 (LoRA likely applied).")

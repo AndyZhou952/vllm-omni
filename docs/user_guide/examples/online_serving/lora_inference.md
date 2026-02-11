@@ -70,9 +70,26 @@ python verify_lora_online.py \
 ```
 
 Interpretation:
-- `baseline ~= lora_scale_0` is expected.
+- `baseline_post_wrap ~= lora_scale_0` is expected.
 - `lora_scale_0 != lora_scale_1` indicates LoRA is actually applied.
-- If `lora_scale_0 ~= lora_scale_1`, LoRA is likely loaded but ineffective (target-module mismatch, per-layer reset, shape mismatch, or near-zero effective weights).
+- If `lora_scale_0 ~= lora_scale_1`, LoRA is likely loaded but ineffective.
+- If `baseline_pre != baseline_post_wrap`, this can happen after first LoRA request because LoRA wrappers are inserted once and runtime state changes; use `baseline_post_wrap` as the reference baseline.
+
+## Troubleshooting with server logs
+
+Use these LoRA diagnostics from server logs:
+
+- `LoRA replacement summary`:
+  - `replaced=0` or very low means adapter target modules are not mapping to runtime layers.
+  - High `target_filtered` means module-name mismatch against `target_modules`.
+- `LoRA activation summary`:
+  - `activated_layers=0` + high `reset_layers` means adapter is loaded but not effectively applied.
+  - `shape_mismatch_skips>0` means LoRA tensor shapes do not fit packed layer expectations.
+- Request trace:
+  - `LoRA request parsed for ...`
+  - `Worker ... LoRA before activation ...`
+  - `Setting active adapter ...`
+  Confirm that name/path/id/scale are consistent from API parse to worker activation.
 
 ## LoRA Format
 
