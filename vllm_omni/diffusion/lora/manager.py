@@ -207,11 +207,35 @@ class DiffusionLoRAManager:
             logger.debug("Adapter %d already loaded, activating", adapter_id)
 
             # update access order
+            prev_scale = self._adapter_scales.get(adapter_id, 1.0)
             self._adapter_scales[adapter_id] = lora_scale
             self._adapter_access_order[adapter_id] = time.time()
             self._adapter_access_order.move_to_end(adapter_id)
 
+            # Decoupled path: same active adapter can refresh scale only.
+            if self._active_adapter_id == adapter_id:
+                if prev_scale == lora_scale:
+                    logger.debug("Adapter %d already active with same scale %.4f, skipping", adapter_id, lora_scale)
+                    return
+                logger.info(
+                    "Updating active adapter scale only: id=%d, prev_scale=%.4f, new_scale=%.4f",
+                    adapter_id,
+                    prev_scale,
+                    lora_scale,
+                )
+                self._apply_external_scale_to_active_layers(lora_scale)
+                return
+
         self._activate_adapter(adapter_id)
+
+    def _set_layer_external_scale(self, lora_layer: BaseLayerWithLoRA, scale: float) -> None:
+        set_external_scale = getattr(lora_layer, "set_external_scale", None)
+        if callable(set_external_scale):
+            set_external_scale(scale)
+
+    def _apply_external_scale_to_active_layers(self, scale: float) -> None:
+        for lora_layer in self._lora_modules.values():
+            self._set_layer_external_scale(lora_layer, scale)
 
     def _load_adapter(
         self,
@@ -492,9 +516,10 @@ class DiffusionLoRAManager:
                             lora_b_list.append(None)
                             continue
                         lora_a_list.append(sub_lora.lora_a)
-                        lora_b_list.append(sub_lora.lora_b * scale)
+                        lora_b_list.append(sub_lora.lora_b)
 
                     lora_layer.set_lora(index=0, lora_a=lora_a_list, lora_b=lora_b_list)
+                    self._set_layer_external_scale(lora_layer, scale)
                     activated_layers += 1
                     logger.debug(
                         "Activated packed LoRA for %s via submodules=%s (scale=%.2f)",
@@ -512,11 +537,9 @@ class DiffusionLoRAManager:
             # Packed LoRA weights already provide per-slice tensors.
             if isinstance(lora_weights, PackedLoRALayerWeights):
                 lora_a_list = lora_weights.lora_a
-                lora_b_list = [
-                    None if b is None else b * scale  # type: ignore[operator]
-                    for b in lora_weights.lora_b
-                ]
+                lora_b_list = [None if b is None else b for b in lora_weights.lora_b]
                 lora_layer.set_lora(index=0, lora_a=lora_a_list, lora_b=lora_b_list)
+                self._set_layer_external_scale(lora_layer, scale)
                 activated_layers += 1
                 logger.debug(
                     "Activated packed LoRA for %s (scale=%.2f)",
@@ -550,8 +573,9 @@ class DiffusionLoRAManager:
 
                 b_splits = list(torch.split(lora_weights.lora_b, list(output_slices), dim=0))
                 lora_a_list = [lora_weights.lora_a] * n_slices
-                lora_b_list = [b * scale for b in b_splits]
+                lora_b_list = b_splits
                 lora_layer.set_lora(index=0, lora_a=lora_a_list, lora_b=lora_b_list)
+                self._set_layer_external_scale(lora_layer, scale)
                 activated_layers += 1
                 logger.debug(
                     "Activated fused LoRA for packed layer %s (scale=%.2f)",
@@ -560,8 +584,8 @@ class DiffusionLoRAManager:
                 )
                 continue
 
-            scaled_lora_b = lora_weights.lora_b * scale
-            lora_layer.set_lora(index=0, lora_a=lora_weights.lora_a, lora_b=scaled_lora_b)
+            lora_layer.set_lora(index=0, lora_a=lora_weights.lora_a, lora_b=lora_weights.lora_b)
+            self._set_layer_external_scale(lora_layer, scale)
             activated_layers += 1
             logger.debug(
                 "Activated LoRA for %s: lora_a shape=%s, lora_b shape=%s, scale=%.2f",

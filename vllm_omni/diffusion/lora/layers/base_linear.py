@@ -38,11 +38,13 @@ class DiffusionBaseLinearLayerWithLoRA(BaseLinearLayerWithLoRA):
         object.__setattr__(self, "_diffusion_base_layer_ref", base_layer)
         n_slices = getattr(self, "n_slices", 1)
         self._diffusion_lora_active_slices = (False,) * int(n_slices)
+        self._diffusion_lora_external_scale = 1.0
 
     def reset_lora(self, index: int):
         super().reset_lora(index)
         n_slices = getattr(self, "n_slices", 1)
         self._diffusion_lora_active_slices = (False,) * int(n_slices)
+        self._diffusion_lora_external_scale = 1.0
 
     def set_lora(
         self,
@@ -66,6 +68,9 @@ class DiffusionBaseLinearLayerWithLoRA(BaseLinearLayerWithLoRA):
             # Single-slice layer.
             self._diffusion_lora_active_slices = (True,)
 
+    def set_external_scale(self, scale: float) -> None:
+        self._diffusion_lora_external_scale = float(scale)
+
     def apply(self, x: torch.Tensor, bias: torch.Tensor | None = None) -> torch.Tensor:
         """
         override: Use simple matmul instead of punica_wrapper.add_lora_linear().
@@ -83,6 +88,9 @@ class DiffusionBaseLinearLayerWithLoRA(BaseLinearLayerWithLoRA):
         # Fast path: if no LoRA is active for this layer, skip matmuls.
         active_slices = getattr(self, "_diffusion_lora_active_slices", None)
         if active_slices is not None and not any(active_slices):
+            return output
+        external_scale = float(getattr(self, "_diffusion_lora_external_scale", 1.0))
+        if external_scale == 0.0:
             return output
 
         # In fully-sharded LoRA mode, vLLM uses an all-gather between shrink and
@@ -128,6 +136,8 @@ class DiffusionBaseLinearLayerWithLoRA(BaseLinearLayerWithLoRA):
             #   buffer = (x @ A.T)
             #   y += buffer @ B.T
             delta = (x_flat @ A.t()) @ B.t()
+            if external_scale != 1.0:
+                delta = delta * external_scale
             y_flat[:, offset : offset + slice_size] = y_flat[:, offset : offset + slice_size] + delta
             offset += slice_size
 
