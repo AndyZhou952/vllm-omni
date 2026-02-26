@@ -296,7 +296,7 @@ def main():
         "enforce_eager": args.enforce_eager,
         "enable_cpu_offload": args.enable_cpu_offload,
         **lora_args,
-        **quant_kwargs
+        **quant_kwargs,
     }
     if use_nextstep:
         # NextStep-1.1 requires explicit pipeline class
@@ -338,7 +338,7 @@ def main():
         )
 
     generation_start = time.perf_counter()
-    
+
     extra_args = {
         "timesteps_shift": args.timesteps_shift,
         "cfg_schedule": args.cfg_schedule,
