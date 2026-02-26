@@ -18,13 +18,26 @@ from vllm_omni.outputs import OmniRequestOutput
 from vllm_omni.platforms import current_omni_platform
 
 
+def is_nextstep_model(model_name: str) -> bool:
+    """Check if the model is a NextStep model by reading its config."""
+    from vllm.transformers_utils.config import get_hf_file_to_dict
+
+    try:
+        cfg = get_hf_file_to_dict("config.json", model_name)
+        if cfg and cfg.get("model_type") == "nextstep":
+            return True
+    except Exception:
+        pass
+    return False
+
+
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Generate an image with Qwen-Image.")
+    parser = argparse.ArgumentParser(description="Generate an image with supported diffusion models.")
     parser.add_argument(
         "--model",
         default="Qwen/Qwen-Image",
         help="Diffusion model name or local path. Supported models: "
-        "Qwen/Qwen-Image, Tongyi-MAI/Z-Image-Turbo, Qwen/Qwen-Image-2512",
+        "Qwen/Qwen-Image, Tongyi-MAI/Z-Image-Turbo, Qwen/Qwen-Image-2512, stepfun-ai/NextStep-1.1",
     )
     parser.add_argument("--prompt", default="a cup of coffee on the table", help="Text prompt for image generation.")
     parser.add_argument(
@@ -116,12 +129,6 @@ def parse_args() -> argparse.Namespace:
         help="Enable layerwise (blockwise) offloading on DiT modules.",
     )
     parser.add_argument(
-        "--layerwise-num-gpu-layers",
-        type=int,
-        default=1,
-        help="Number of ready layers (blocks) to keep on GPU during generation.",
-    )
-    parser.add_argument(
         "--quantization",
         type=str,
         default=None,
@@ -183,16 +190,43 @@ def parse_args() -> argparse.Namespace:
         default=1,
         help="Number of ranks used for VAE patch/tile parallelism (decode/encode).",
     )
+    # NextStep-1.1 specific arguments
+    parser.add_argument(
+        "--guidance-scale-2",
+        type=float,
+        default=1.0,
+        help="Secondary guidance scale (e.g. image-level CFG for NextStep-1.1).",
+    )
+    parser.add_argument(
+        "--timesteps-shift",
+        type=float,
+        default=1.0,
+        help="[NextStep-1.1 only] Timesteps shift parameter for sampling.",
+    )
+    parser.add_argument(
+        "--cfg-schedule",
+        type=str,
+        default="constant",
+        choices=["constant", "linear"],
+        help="[NextStep-1.1 only] CFG schedule type.",
+    )
+    parser.add_argument(
+        "--use-norm",
+        action="store_true",
+        help="[NextStep-1.1 only] Apply layer normalization to sampled tokens.",
+    )
     return parser.parse_args()
 
 
 def main():
     args = parse_args()
     generator = torch.Generator(device=current_omni_platform.device_type).manual_seed(args.seed)
+    use_nextstep = is_nextstep_model(args.model)
 
-    # Configure cache based on backend type
     cache_config = None
-    if args.cache_backend == "cache_dit":
+    cache_backend = args.cache_backend
+
+    if cache_backend == "cache_dit":
         # cache-dit configuration: Hybrid DBCache + SCM + TaylorSeer
         # All parameters marked with [cache-dit only] in DiffusionCacheConfig
         cache_config = {
@@ -209,7 +243,7 @@ def main():
             "scm_steps_mask_policy": None,  # SCM mask policy: None (disabled), "slow", "medium", "fast", "ultra"
             "scm_steps_policy": "dynamic",  # SCM steps policy: "dynamic" or "static"
         }
-    elif args.cache_backend == "tea_cache":
+    elif cache_backend == "tea_cache":
         # TeaCache configuration
         # All parameters marked with [tea_cache only] in DiffusionCacheConfig
         cache_config = {
@@ -232,9 +266,9 @@ def main():
     profiler_enabled = bool(os.getenv("VLLM_TORCH_PROFILER_DIR"))
 
     # Prepare LoRA kwargs for Omni initialization
-    omni_kwargs = {}
+    lora_args: dict[str, Any] = {}
     if args.lora_path:
-        omni_kwargs["lora_path"] = args.lora_path
+        lora_args["lora_path"] = args.lora_path
         print(f"Using LoRA from: {args.lora_path}")
 
     # Build quantization kwargs: use quantization_config dict when
@@ -249,21 +283,25 @@ def main():
     elif args.quantization:
         quant_kwargs["quantization"] = args.quantization
 
-    omni = Omni(
-        model=args.model,
-        enable_layerwise_offload=args.enable_layerwise_offload,
-        layerwise_num_gpu_layers=args.layerwise_num_gpu_layers,
-        vae_use_slicing=args.vae_use_slicing,
-        vae_use_tiling=args.vae_use_tiling,
-        cache_backend=args.cache_backend,
-        cache_config=cache_config,
-        enable_cache_dit_summary=args.enable_cache_dit_summary,
-        parallel_config=parallel_config,
-        enforce_eager=args.enforce_eager,
-        enable_cpu_offload=args.enable_cpu_offload,
-        **omni_kwargs,
-        **quant_kwargs,
-    )
+    omni_kwargs = {
+        "model": args.model,
+        "enable_layerwise_offload": args.enable_layerwise_offload,
+        "layerwise_num_gpu_layers": args.layerwise_num_gpu_layers,
+        "vae_use_slicing": args.vae_use_slicing,
+        "vae_use_tiling": args.vae_use_tiling,
+        "cache_backend": args.cache_backend,
+        "cache_config": cache_config,
+        "enable_cache_dit_summary": args.enable_cache_dit_summary,
+        "parallel_config": parallel_config,
+        "enforce_eager": args.enforce_eager,
+        "enable_cpu_offload": args.enable_cpu_offload,
+        **lora_args,
+        **quant_kwargs
+    }
+    if use_nextstep:
+        # NextStep-1.1 requires explicit pipeline class
+        omni_kwargs["model_class_name"] = "NextStep11Pipeline"
+    omni = Omni(**omni_kwargs)
 
     if profiler_enabled:
         print("[Profiler] Starting profiling...")
@@ -274,7 +312,7 @@ def main():
     print("Generation Configuration:")
     print(f"  Model: {args.model}")
     print(f"  Inference steps: {args.num_inference_steps}")
-    print(f"  Cache backend: {args.cache_backend if args.cache_backend else 'None (no acceleration)'}")
+    print(f"  Cache backend: {cache_backend if cache_backend else 'None (no acceleration)'}")
     print(f"  Quantization: {args.quantization if args.quantization else 'None (BF16)'}")
     if ignored_layers:
         print(f"  Ignored layers: {ignored_layers}")
@@ -300,8 +338,16 @@ def main():
         )
 
     generation_start = time.perf_counter()
+    
+    extra_args = {
+        "timesteps_shift": args.timesteps_shift,
+        "cfg_schedule": args.cfg_schedule,
+        "use_norm": args.use_norm,
+    }
 
-    lora_kwargs = {"lora_request": lora_request, "lora_scale": args.lora_scale} if lora_request else {}
+    if lora_request:
+        extra_args["lora_request"] = lora_request
+        extra_args["lora_scale"] = args.lora_scale
 
     outputs = omni.generate(
         {
@@ -314,9 +360,10 @@ def main():
             generator=generator,
             true_cfg_scale=args.cfg_scale,
             guidance_scale=args.guidance_scale,
+            guidance_scale_2=args.guidance_scale_2,
             num_inference_steps=args.num_inference_steps,
             num_outputs_per_prompt=args.num_images_per_prompt,
-            **lora_kwargs,
+            extra_args=extra_args,
         ),
     )
 
