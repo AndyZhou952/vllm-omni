@@ -1,0 +1,128 @@
+{
+  "metadata": {
+    "cuda_visible_devices": "0,1,2,3",
+    "height": 512,
+    "logprobs": true,
+    "max_num_seqs": 1,
+    "model": "/mnt/models/hub/Qwen-Image",
+    "n_values": [
+      1
+    ],
+    "num_inference_steps": 10,
+    "python": "/mnt/andy/qwen-regression/envs/v018/bin/python",
+    "step_execution": false,
+    "tokenizer_path": "/mnt/models/hub/Qwen-Image/tokenizer",
+    "true_cfg_scale": 4.0,
+    "width": 512
+  },
+  "results": [
+    {
+      "elapsed_ms": 10753.933854401112,
+      "iteration": 0,
+      "measured": false,
+      "mode": "serialized",
+      "ms_per_output": 10753.933854401112,
+      "n": 1,
+      "output": {
+        "logprobs_present": [
+          true
+        ],
+        "num_outputs": 1,
+        "shapes": [
+          [
+            3,
+            512,
+            512
+          ]
+        ],
+        "stop_reasons": [
+          "completed"
+        ]
+      }
+    },
+    {
+      "elapsed_ms": 1495.337639003992,
+      "iteration": 1,
+      "measured": true,
+      "mode": "serialized",
+      "ms_per_output": 1495.337639003992,
+      "n": 1,
+      "output": {
+        "logprobs_present": [
+          true
+        ],
+        "num_outputs": 1,
+        "shapes": [
+          [
+            3,
+            512,
+            512
+          ]
+        ],
+        "stop_reasons": [
+          "completed"
+        ]
+      }
+    },
+    {
+      "elapsed_ms": 1455.1842361688614,
+      "iteration": 2,
+      "measured": true,
+      "mode": "serialized",
+      "ms_per_output": 1455.1842361688614,
+      "n": 1,
+      "output": {
+        "logprobs_present": [
+          true
+        ],
+        "num_outputs": 1,
+        "shapes": [
+          [
+            3,
+            512,
+            512
+          ]
+        ],
+        "stop_reasons": [
+          "completed"
+        ]
+      }
+    },
+    {
+      "elapsed_ms": 1443.8149649649858,
+      "iteration": 3,
+      "measured": true,
+      "mode": "serialized",
+      "ms_per_output": 1443.8149649649858,
+      "n": 1,
+      "output": {
+        "logprobs_present": [
+          true
+        ],
+        "num_outputs": 1,
+        "shapes": [
+          [
+            3,
+            512,
+            512
+          ]
+        ],
+        "stop_reasons": [
+          "completed"
+        ]
+      }
+    }
+  ],
+  "summary": [
+    {
+      "max_ms": 1495.337639003992,
+      "mean_ms": 1464.778946712613,
+      "mean_ms_per_output": 1464.778946712613,
+      "min_ms": 1443.8149649649858,
+      "mode": "serialized",
+      "n": 1,
+      "repeats": 3
+    }
+  ],
+  "unsupported": []
+}

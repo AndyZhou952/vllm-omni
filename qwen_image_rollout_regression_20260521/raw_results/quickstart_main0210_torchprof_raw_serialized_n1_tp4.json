@@ -1,0 +1,56 @@
+{
+  "metadata": {
+    "cuda_visible_devices": "0,1,2,3",
+    "height": 512,
+    "logprobs": true,
+    "max_num_seqs": 1,
+    "model": "/mnt/models/hub/Qwen-Image",
+    "n_values": [
+      1
+    ],
+    "num_inference_steps": 10,
+    "python": "/mnt/andy/qwen-regression/envs/v020/bin/python",
+    "step_execution": false,
+    "tokenizer_path": "/mnt/models/hub/Qwen-Image/tokenizer",
+    "true_cfg_scale": 4.0,
+    "width": 512
+  },
+  "results": [
+    {
+      "elapsed_ms": 16104.227220639586,
+      "iteration": 0,
+      "measured": true,
+      "mode": "serialized",
+      "ms_per_output": 16104.227220639586,
+      "n": 1,
+      "output": {
+        "logprobs_present": [
+          true
+        ],
+        "num_outputs": 1,
+        "shapes": [
+          [
+            3,
+            512,
+            512
+          ]
+        ],
+        "stop_reasons": [
+          "completed"
+        ]
+      }
+    }
+  ],
+  "summary": [
+    {
+      "max_ms": 16104.227220639586,
+      "mean_ms": 16104.227220639586,
+      "mean_ms_per_output": 16104.227220639586,
+      "min_ms": 16104.227220639586,
+      "mode": "serialized",
+      "n": 1,
+      "repeats": 1
+    }
+  ],
+  "unsupported": []
+}

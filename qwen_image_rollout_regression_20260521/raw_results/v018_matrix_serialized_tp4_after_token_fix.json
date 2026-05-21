@@ -1,0 +1,250 @@
+{
+  "metadata": {
+    "cuda_visible_devices": "0,1,2,3",
+    "height": 512,
+    "logprobs": true,
+    "max_num_seqs": 1,
+    "model": "/mnt/models/hub/Qwen-Image",
+    "n_values": [
+      1,
+      4,
+      16
+    ],
+    "num_inference_steps": 10,
+    "python": "/mnt/andy/qwen-regression/envs/v018/bin/python",
+    "step_execution": false,
+    "tokenizer_path": "/mnt/models/hub/Qwen-Image/tokenizer",
+    "true_cfg_scale": 4.0,
+    "width": 512
+  },
+  "results": [
+    {
+      "elapsed_ms": 11668.19754242897,
+      "iteration": 0,
+      "measured": true,
+      "mode": "serialized",
+      "ms_per_output": 11668.19754242897,
+      "n": 1,
+      "output": {
+        "logprobs_present": [
+          true
+        ],
+        "num_outputs": 1,
+        "shapes": [
+          [
+            3,
+            512,
+            512
+          ]
+        ],
+        "stop_reasons": [
+          "completed"
+        ]
+      }
+    },
+    {
+      "elapsed_ms": 14631.519878283143,
+      "iteration": 0,
+      "measured": true,
+      "mode": "serialized",
+      "ms_per_output": 3657.8799695707858,
+      "n": 4,
+      "output": {
+        "logprobs_present": [
+          true,
+          true,
+          true,
+          true
+        ],
+        "num_outputs": 4,
+        "shapes": [
+          [
+            3,
+            512,
+            512
+          ],
+          [
+            3,
+            512,
+            512
+          ],
+          [
+            3,
+            512,
+            512
+          ],
+          [
+            3,
+            512,
+            512
+          ]
+        ],
+        "stop_reasons": [
+          "completed",
+          "completed",
+          "completed",
+          "completed"
+        ]
+      }
+    },
+    {
+      "elapsed_ms": 33335.90777590871,
+      "iteration": 0,
+      "measured": true,
+      "mode": "serialized",
+      "ms_per_output": 2083.4942359942943,
+      "n": 16,
+      "output": {
+        "logprobs_present": [
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "num_outputs": 16,
+        "shapes": [
+          [
+            3,
+            512,
+            512
+          ],
+          [
+            3,
+            512,
+            512
+          ],
+          [
+            3,
+            512,
+            512
+          ],
+          [
+            3,
+            512,
+            512
+          ],
+          [
+            3,
+            512,
+            512
+          ],
+          [
+            3,
+            512,
+            512
+          ],
+          [
+            3,
+            512,
+            512
+          ],
+          [
+            3,
+            512,
+            512
+          ],
+          [
+            3,
+            512,
+            512
+          ],
+          [
+            3,
+            512,
+            512
+          ],
+          [
+            3,
+            512,
+            512
+          ],
+          [
+            3,
+            512,
+            512
+          ],
+          [
+            3,
+            512,
+            512
+          ],
+          [
+            3,
+            512,
+            512
+          ],
+          [
+            3,
+            512,
+            512
+          ],
+          [
+            3,
+            512,
+            512
+          ]
+        ],
+        "stop_reasons": [
+          "completed",
+          "completed",
+          "completed",
+          "completed",
+          "completed",
+          "completed",
+          "completed",
+          "completed",
+          "completed",
+          "completed",
+          "completed",
+          "completed",
+          "completed",
+          "completed",
+          "completed",
+          "completed"
+        ]
+      }
+    }
+  ],
+  "summary": [
+    {
+      "max_ms": 11668.19754242897,
+      "mean_ms": 11668.19754242897,
+      "mean_ms_per_output": 11668.19754242897,
+      "min_ms": 11668.19754242897,
+      "mode": "serialized",
+      "n": 1,
+      "repeats": 1
+    },
+    {
+      "max_ms": 14631.519878283143,
+      "mean_ms": 14631.519878283143,
+      "mean_ms_per_output": 3657.8799695707858,
+      "min_ms": 14631.519878283143,
+      "mode": "serialized",
+      "n": 4,
+      "repeats": 1
+    },
+    {
+      "max_ms": 33335.90777590871,
+      "mean_ms": 33335.90777590871,
+      "mean_ms_per_output": 2083.4942359942943,
+      "min_ms": 33335.90777590871,
+      "mode": "serialized",
+      "n": 16,
+      "repeats": 1
+    }
+  ],
+  "unsupported": []
+}

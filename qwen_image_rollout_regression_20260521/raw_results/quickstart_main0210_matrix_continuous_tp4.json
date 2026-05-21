@@ -1,0 +1,250 @@
+{
+  "metadata": {
+    "cuda_visible_devices": "0,1,2,3",
+    "height": 512,
+    "logprobs": true,
+    "max_num_seqs": 4,
+    "model": "/mnt/models/hub/Qwen-Image",
+    "n_values": [
+      1,
+      4,
+      16
+    ],
+    "num_inference_steps": 10,
+    "python": "/mnt/andy/qwen-regression/envs/v020/bin/python",
+    "step_execution": true,
+    "tokenizer_path": "/mnt/models/hub/Qwen-Image/tokenizer",
+    "true_cfg_scale": 4.0,
+    "width": 512
+  },
+  "results": [
+    {
+      "elapsed_ms": 14751.988809555769,
+      "iteration": 0,
+      "measured": true,
+      "mode": "continuous",
+      "ms_per_output": 14751.988809555769,
+      "n": 1,
+      "output": {
+        "logprobs_present": [
+          true
+        ],
+        "num_outputs": 1,
+        "shapes": [
+          [
+            3,
+            512,
+            512
+          ]
+        ],
+        "stop_reasons": [
+          "completed"
+        ]
+      }
+    },
+    {
+      "elapsed_ms": 22857.96920210123,
+      "iteration": 0,
+      "measured": true,
+      "mode": "continuous",
+      "ms_per_output": 5714.492300525308,
+      "n": 4,
+      "output": {
+        "logprobs_present": [
+          true,
+          true,
+          true,
+          true
+        ],
+        "num_outputs": 4,
+        "shapes": [
+          [
+            3,
+            512,
+            512
+          ],
+          [
+            3,
+            512,
+            512
+          ],
+          [
+            3,
+            512,
+            512
+          ],
+          [
+            3,
+            512,
+            512
+          ]
+        ],
+        "stop_reasons": [
+          "completed",
+          "completed",
+          "completed",
+          "completed"
+        ]
+      }
+    },
+    {
+      "elapsed_ms": 51135.702811181545,
+      "iteration": 0,
+      "measured": true,
+      "mode": "continuous",
+      "ms_per_output": 3195.9814256988466,
+      "n": 16,
+      "output": {
+        "logprobs_present": [
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "num_outputs": 16,
+        "shapes": [
+          [
+            3,
+            512,
+            512
+          ],
+          [
+            3,
+            512,
+            512
+          ],
+          [
+            3,
+            512,
+            512
+          ],
+          [
+            3,
+            512,
+            512
+          ],
+          [
+            3,
+            512,
+            512
+          ],
+          [
+            3,
+            512,
+            512
+          ],
+          [
+            3,
+            512,
+            512
+          ],
+          [
+            3,
+            512,
+            512
+          ],
+          [
+            3,
+            512,
+            512
+          ],
+          [
+            3,
+            512,
+            512
+          ],
+          [
+            3,
+            512,
+            512
+          ],
+          [
+            3,
+            512,
+            512
+          ],
+          [
+            3,
+            512,
+            512
+          ],
+          [
+            3,
+            512,
+            512
+          ],
+          [
+            3,
+            512,
+            512
+          ],
+          [
+            3,
+            512,
+            512
+          ]
+        ],
+        "stop_reasons": [
+          "completed",
+          "completed",
+          "completed",
+          "completed",
+          "completed",
+          "completed",
+          "completed",
+          "completed",
+          "completed",
+          "completed",
+          "completed",
+          "completed",
+          "completed",
+          "completed",
+          "completed",
+          "completed"
+        ]
+      }
+    }
+  ],
+  "summary": [
+    {
+      "max_ms": 14751.988809555769,
+      "mean_ms": 14751.988809555769,
+      "mean_ms_per_output": 14751.988809555769,
+      "min_ms": 14751.988809555769,
+      "mode": "continuous",
+      "n": 1,
+      "repeats": 1
+    },
+    {
+      "max_ms": 22857.96920210123,
+      "mean_ms": 22857.96920210123,
+      "mean_ms_per_output": 5714.492300525308,
+      "min_ms": 22857.96920210123,
+      "mode": "continuous",
+      "n": 4,
+      "repeats": 1
+    },
+    {
+      "max_ms": 51135.702811181545,
+      "mean_ms": 51135.702811181545,
+      "mean_ms_per_output": 3195.9814256988466,
+      "min_ms": 51135.702811181545,
+      "mode": "continuous",
+      "n": 16,
+      "repeats": 1
+    }
+  ],
+  "unsupported": []
+}

@@ -1,0 +1,408 @@
+/mnt/andy/vllm-omni/vllm_omni/version.py:55: RuntimeWarning: vLLM and vLLM-Omni appear to have mismatched major/minor versions:
+ --> vLLM-Omni version 0.1.dev1666+gda5361879
+ --> vLLM version 0.21.0
+This will likely cause compatibility issues.
+  warn_if_misaligned_vllm_version()
+/mnt/andy/qwen-regression/envs/v020/lib/python3.12/site-packages/verl/workers/engine/mindspeed/transformer_impl.py:24: UserWarning: NPU not support router replay for now.
+  from verl.utils.megatron.router_replay_patch import RouterReplay
+[transformers] `Qwen2VLImageProcessorFast` is deprecated. The `Fast` suffix for image processors has been removed; use `Qwen2VLImageProcessor` instead.
+2026-05-21 14:51:55,560	WARNING utils.py:461 -- Detecting docker specified CPUs. In previous versions of Ray, CPU detection in containers was incorrect. Please ensure that Ray has enough CPUs allocated. As a temporary workaround to revert to the prior behavior, set `RAY_USE_MULTIPROCESSING_CPU_COUNT=1` as an env var before starting Ray. Set the env var: `RAY_DISABLE_DOCKER_CPU_WARNING=1` to mute this warning.
+2026-05-21 14:51:55,577	WARNING services.py:2213 -- WARNING: The object store is using /tmp/ray instead of /dev/shm because /dev/shm has only 7198457856 bytes available. This will harm performance! You may be able to free up space by deleting files in /dev/shm. If you are inside a Docker container, you can increase /dev/shm size by passing '--shm-size=10.24gb' to 'docker run' (or add it to the run_options list in a Ray cluster config). Make sure to set this to more than 30% of available RAM.
+2026-05-21 14:51:58,753	INFO worker.py:2003 -- Started a local Ray instance. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
+/mnt/andy/qwen-regression/envs/v020/lib/python3.12/site-packages/ray/_private/worker.py:2051: FutureWarning: Tip: In future versions of Ray, Ray will no longer override accelerator visible devices env var if num_gpus=0 or num_gpus=None (default). To enable this behavior and turn off this error message, set RAY_ACCEL_ENV_VAR_OVERRIDE_ON_ZERO=0
+  warnings.warn(
+[36m(pid=2134412)[0m /mnt/andy/vllm-omni/vllm_omni/version.py:55: RuntimeWarning: vLLM and vLLM-Omni appear to have mismatched major/minor versions:
+[36m(pid=2134412)[0m  --> vLLM-Omni version 0.1.dev1666+gda5361879
+[36m(pid=2134412)[0m  --> vLLM version 0.21.0
+[36m(pid=2134412)[0m This will likely cause compatibility issues.
+[36m(pid=2134412)[0m   warn_if_misaligned_vllm_version()
+[36m(pid=2134412)[0m /mnt/andy/qwen-regression/envs/v020/lib/python3.12/site-packages/verl/workers/engine/mindspeed/transformer_impl.py:24: UserWarning: NPU not support router replay for now.
+[36m(pid=2134412)[0m   from verl.utils.megatron.router_replay_patch import RouterReplay
+[36m(pid=2134412)[0m [transformers] `Qwen2VLImageProcessorFast` is deprecated. The `Fast` suffix for image processors has been removed; use `Qwen2VLImageProcessor` instead.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m /mnt/andy/qwen-regression/envs/v020/lib/python3.12/site-packages/verl/utils/device.py:146: FutureWarning: torch.cuda._set_allocator_settings is deprecated. Use torch._C._accelerator_setAllocatorSettings instead.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m   torch.cuda.memory._set_allocator_settings(f"expandable_segments:{enable}")
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m [transformers] `Siglip2ImageProcessorFast` is deprecated. The `Fast` suffix for image processors has been removed; use `Siglip2ImageProcessor` instead.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m /mnt/andy/vllm-omni/vllm_omni/version.py:55: RuntimeWarning: vLLM and vLLM-Omni appear to have mismatched major/minor versions:
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m  --> vLLM-Omni version 0.1.dev1666+gda5361879
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m  --> vLLM version 0.21.0
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m This will likely cause compatibility issues.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m   warn_if_misaligned_vllm_version()
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m /mnt/andy/vllm-omni/vllm_omni/version.py:55: RuntimeWarning: vLLM and vLLM-Omni appear to have mismatched major/minor versions:
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m  --> vLLM-Omni version 0.1.dev1666+gda5361879
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m  --> vLLM version 0.21.0
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m This will likely cause compatibility issues.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m   warn_if_misaligned_vllm_version()
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m /mnt/andy/vllm-omni/vllm_omni/version.py:55: RuntimeWarning: vLLM and vLLM-Omni appear to have mismatched major/minor versions:
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m  --> vLLM-Omni version 0.1.dev1666+gda5361879
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m  --> vLLM version 0.21.0
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m This will likely cause compatibility issues.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m   warn_if_misaligned_vllm_version()
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m /mnt/andy/vllm-omni/vllm_omni/version.py:55: RuntimeWarning: vLLM and vLLM-Omni appear to have mismatched major/minor versions:
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m  --> vLLM-Omni version 0.1.dev1666+gda5361879
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m  --> vLLM version 0.21.0
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m This will likely cause compatibility issues.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m   warn_if_misaligned_vllm_version()
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m /mnt/andy/qwen-regression/envs/v020/lib/python3.12/site-packages/verl/workers/engine/mindspeed/transformer_impl.py:24: UserWarning: NPU not support router replay for now.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m   from verl.utils.megatron.router_replay_patch import RouterReplay
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m /mnt/andy/qwen-regression/envs/v020/lib/python3.12/site-packages/verl/workers/engine/mindspeed/transformer_impl.py:24: UserWarning: NPU not support router replay for now.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m   from verl.utils.megatron.router_replay_patch import RouterReplay
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m /mnt/andy/qwen-regression/envs/v020/lib/python3.12/site-packages/verl/workers/engine/mindspeed/transformer_impl.py:24: UserWarning: NPU not support router replay for now.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m   from verl.utils.megatron.router_replay_patch import RouterReplay
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m /mnt/andy/qwen-regression/envs/v020/lib/python3.12/site-packages/verl/workers/engine/mindspeed/transformer_impl.py:24: UserWarning: NPU not support router replay for now.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m   from verl.utils.megatron.router_replay_patch import RouterReplay
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m [transformers] `Qwen2VLImageProcessorFast` is deprecated. The `Fast` suffix for image processors has been removed; use `Qwen2VLImageProcessor` instead.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m [transformers] `Qwen2VLImageProcessorFast` is deprecated. The `Fast` suffix for image processors has been removed; use `Qwen2VLImageProcessor` instead.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m [transformers] `Qwen2VLImageProcessorFast` is deprecated. The `Fast` suffix for image processors has been removed; use `Qwen2VLImageProcessor` instead.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m [transformers] `Qwen2VLImageProcessorFast` is deprecated. The `Fast` suffix for image processors has been removed; use `Qwen2VLImageProcessor` instead.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m ['serve',
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m  '/mnt/models/hub/Qwen-Image',
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m  '--dtype',
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m  'bfloat16',
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m  '--load_format',
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m  'safetensors',
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m  '--distributed_executor_backend',
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m  'mp',
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m  '--worker_extension_cls',
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m  'verl_omni.workers.rollout.vllm_rollout.utils.vLLMOmniColocateWorkerExtension',
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m  '--trust_remote_code',
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m  '--max_model_len',
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m  '1058',
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m  '--max_num_seqs',
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m  '1',
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m  '--max_num_batched_tokens',
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m  '8192',
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m  '--logprobs_mode',
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m  'processed_logprobs',
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m  '--gpu_memory_utilization',
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m  '0.8',
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m  '--disable_log_stats',
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m  '--tensor_parallel_size',
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m  '4',
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m  '--seed',
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m  '0',
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m  '--override_generation_config',
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m  '{}',
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m  '--hf_overrides',
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m  '{}',
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m  '--scheduling_policy',
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m  'fcfs',
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m  '--compilation_config',
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m  '{"cudagraph_mode": "FULL_AND_PIECEWISE"}',
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m  '--profiler_config',
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m  '{"profiler": "torch", "torch_profiler_dir": '
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m  '"/mnt/andy/vllm-omni/results/qwen_image_rollout_regression_20260521/profiles/latest_warm_serialized_n1_tp4", '
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m  '"torch_profiler_with_stack": false, "torch_profiler_record_shapes": false, '
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m  '"torch_profiler_with_memory": false, "torch_profiler_use_gzip": false, '
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m  '"active_iterations": 1, "max_iterations": 1}']
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m WARNING 05-21 14:52:37 [profiler.py:129] Using 'torch' profiler with delay_iterations or max_iterations while ignore_frontend is False may result in high overhead.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:52:37 [serve.py:169] Detected diffusion model: /mnt/models/hub/Qwen-Image
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:52:37 [omni_base.py:172] [AsyncOmni] Initializing with model /mnt/models/hub/Qwen-Image
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:52:37 [async_omni_engine.py:276] [AsyncOmniEngine] Initializing with model /mnt/models/hub/Qwen-Image
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:52:37 [async_omni_engine.py:360] [AsyncOmniEngine] Launching Orchestrator thread with 1 stages
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:52:37 [stage_init_utils.py:464] [stage_init] Set VLLM_WORKER_MULTIPROC_METHOD=spawn
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:52:37 [stage_utils.py:108] Stage 0 requested devices ['0', '1', '2', '3'] are already in the visible set ['0', '1', '2', '3']; using as-is (no remap).
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:52:37 [stage_init_utils.py:631] [stage_init] Stage-0 set runtime devices: 0,1,2,3
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:52:37 [multiproc_executor.py:138] Starting server...
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:05 [diffusion_worker.py:645] Worker 0 created result MessageQueue
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m WARNING 05-21 14:53:08 [diffusion_worker.py:905] Worker class <class 'vllm_omni.diffusion.worker.diffusion_worker.DiffusionWorker'> already has attribute _maybe_get_memory_pool_context, which may conflict with worker extension class <class 'verl_omni.workers.rollout.vllm_rollout.utils.vLLMOmniColocateWorkerExtension'>.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m WARNING 05-21 14:53:08 [diffusion_worker.py:905] Worker class <class 'vllm_omni.diffusion.worker.diffusion_worker.DiffusionWorker'> already has attribute sleep, which may conflict with worker extension class <class 'verl_omni.workers.rollout.vllm_rollout.utils.vLLMOmniColocateWorkerExtension'>.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m WARNING 05-21 14:53:08 [diffusion_worker.py:905] Worker class <class 'vllm_omni.diffusion.worker.diffusion_worker.DiffusionWorker'> already has attribute wake_up, which may conflict with worker extension class <class 'verl_omni.workers.rollout.vllm_rollout.utils.vLLMOmniColocateWorkerExtension'>.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:08 [diffusion_worker.py:916] Created extended worker class DiffusionWorkerWithvLLMOmniColocateWorkerExtension from <class 'verl_omni.workers.rollout.vllm_rollout.utils.vLLMOmniColocateWorkerExtension'> for extended calls ['_get_zmq_handle', '_maybe_get_memory_pool_context', '_update_weights', 're_init_pipeline', 'sleep', 'update_weights_from_ipc', 'wake_up']
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m WARNING 05-21 14:53:08 [diffusion_worker.py:905] Worker class <class 'vllm_omni.diffusion.worker.diffusion_worker.DiffusionWorker'> already has attribute _maybe_get_memory_pool_context, which may conflict with worker extension class <class 'verl_omni.workers.rollout.vllm_rollout.utils.vLLMOmniColocateWorkerExtension'>.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m WARNING 05-21 14:53:08 [diffusion_worker.py:905] Worker class <class 'vllm_omni.diffusion.worker.diffusion_worker.DiffusionWorker'> already has attribute _maybe_get_memory_pool_context, which may conflict with worker extension class <class 'verl_omni.workers.rollout.vllm_rollout.utils.vLLMOmniColocateWorkerExtension'>.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m WARNING 05-21 14:53:08 [diffusion_worker.py:905] Worker class <class 'vllm_omni.diffusion.worker.diffusion_worker.DiffusionWorker'> already has attribute sleep, which may conflict with worker extension class <class 'verl_omni.workers.rollout.vllm_rollout.utils.vLLMOmniColocateWorkerExtension'>.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m WARNING 05-21 14:53:08 [diffusion_worker.py:905] Worker class <class 'vllm_omni.diffusion.worker.diffusion_worker.DiffusionWorker'> already has attribute wake_up, which may conflict with worker extension class <class 'verl_omni.workers.rollout.vllm_rollout.utils.vLLMOmniColocateWorkerExtension'>.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m WARNING 05-21 14:53:08 [diffusion_worker.py:905] Worker class <class 'vllm_omni.diffusion.worker.diffusion_worker.DiffusionWorker'> already has attribute sleep, which may conflict with worker extension class <class 'verl_omni.workers.rollout.vllm_rollout.utils.vLLMOmniColocateWorkerExtension'>.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m WARNING 05-21 14:53:08 [diffusion_worker.py:905] Worker class <class 'vllm_omni.diffusion.worker.diffusion_worker.DiffusionWorker'> already has attribute wake_up, which may conflict with worker extension class <class 'verl_omni.workers.rollout.vllm_rollout.utils.vLLMOmniColocateWorkerExtension'>.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m WARNING 05-21 14:53:08 [diffusion_worker.py:905] Worker class <class 'vllm_omni.diffusion.worker.diffusion_worker.DiffusionWorker'> already has attribute _maybe_get_memory_pool_context, which may conflict with worker extension class <class 'verl_omni.workers.rollout.vllm_rollout.utils.vLLMOmniColocateWorkerExtension'>.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:08 [diffusion_worker.py:916] Created extended worker class DiffusionWorkerWithvLLMOmniColocateWorkerExtension from <class 'verl_omni.workers.rollout.vllm_rollout.utils.vLLMOmniColocateWorkerExtension'> for extended calls ['_get_zmq_handle', '_maybe_get_memory_pool_context', '_update_weights', 're_init_pipeline', 'sleep', 'update_weights_from_ipc', 'wake_up']
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m WARNING 05-21 14:53:08 [diffusion_worker.py:905] Worker class <class 'vllm_omni.diffusion.worker.diffusion_worker.DiffusionWorker'> already has attribute sleep, which may conflict with worker extension class <class 'verl_omni.workers.rollout.vllm_rollout.utils.vLLMOmniColocateWorkerExtension'>.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:08 [diffusion_worker.py:916] Created extended worker class DiffusionWorkerWithvLLMOmniColocateWorkerExtension from <class 'verl_omni.workers.rollout.vllm_rollout.utils.vLLMOmniColocateWorkerExtension'> for extended calls ['_get_zmq_handle', '_maybe_get_memory_pool_context', '_update_weights', 're_init_pipeline', 'sleep', 'update_weights_from_ipc', 'wake_up']
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m WARNING 05-21 14:53:08 [diffusion_worker.py:905] Worker class <class 'vllm_omni.diffusion.worker.diffusion_worker.DiffusionWorker'> already has attribute wake_up, which may conflict with worker extension class <class 'verl_omni.workers.rollout.vllm_rollout.utils.vLLMOmniColocateWorkerExtension'>.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:08 [diffusion_worker.py:916] Created extended worker class DiffusionWorkerWithvLLMOmniColocateWorkerExtension from <class 'verl_omni.workers.rollout.vllm_rollout.utils.vLLMOmniColocateWorkerExtension'> for extended calls ['_get_zmq_handle', '_maybe_get_memory_pool_context', '_update_weights', 're_init_pipeline', 'sleep', 'update_weights_from_ipc', 'wake_up']
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:09 [scheduler.py:239] Chunked prefill is enabled with max_num_batched_tokens=2048.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:09 [vllm.py:886] Asynchronous scheduling is enabled.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:09 [kernel.py:212] Final IR op priority after setting platform defaults: IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native'])
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:09 [diffusion_worker.py:232] Final IR op priority after setting vLLM-Omni overrides: IrOpPriorityConfig(rms_norm=['vllm_c', 'native'], fused_add_rms_norm=['vllm_c', 'native'])
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:09 [scheduler.py:239] Chunked prefill is enabled with max_num_batched_tokens=2048.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:09 [vllm.py:886] Asynchronous scheduling is enabled.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:09 [kernel.py:212] Final IR op priority after setting platform defaults: IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native'])
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:09 [diffusion_worker.py:232] Final IR op priority after setting vLLM-Omni overrides: IrOpPriorityConfig(rms_norm=['vllm_c', 'native'], fused_add_rms_norm=['vllm_c', 'native'])
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:09 [scheduler.py:239] Chunked prefill is enabled with max_num_batched_tokens=2048.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:09 [vllm.py:886] Asynchronous scheduling is enabled.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:09 [kernel.py:212] Final IR op priority after setting platform defaults: IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native'])
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:09 [diffusion_worker.py:232] Final IR op priority after setting vLLM-Omni overrides: IrOpPriorityConfig(rms_norm=['vllm_c', 'native'], fused_add_rms_norm=['vllm_c', 'native'])
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:09 [scheduler.py:239] Chunked prefill is enabled with max_num_batched_tokens=2048.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:09 [vllm.py:886] Asynchronous scheduling is enabled.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:09 [kernel.py:212] Final IR op priority after setting platform defaults: IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native'])
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:09 [diffusion_worker.py:232] Final IR op priority after setting vLLM-Omni overrides: IrOpPriorityConfig(rms_norm=['vllm_c', 'native'], fused_add_rms_norm=['vllm_c', 'native'])
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:10 [diffusion_worker.py:243] Worker 0: Initialized device and distributed environment.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:10 [diffusion_worker.py:243] Worker 3: Initialized device and distributed environment.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:10 [diffusion_worker.py:243] Worker 1: Initialized device and distributed environment.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:10 [diffusion_worker.py:243] Worker 2: Initialized device and distributed environment.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:10 [parallel_state.py:588] Building SP subgroups from explicit sp_group_ranks (sp_size=1, ulysses=1, ring=1, use_ulysses_low=True).
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:10 [parallel_state.py:588] Building SP subgroups from explicit sp_group_ranks (sp_size=1, ulysses=1, ring=1, use_ulysses_low=True).
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:10 [parallel_state.py:588] Building SP subgroups from explicit sp_group_ranks (sp_size=1, ulysses=1, ring=1, use_ulysses_low=True).
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:10 [parallel_state.py:630] SP group details for rank 3: sp_group=[3], ulysses_group=[3], ring_group=[3]
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:10 [parallel_state.py:630] SP group details for rank 0: sp_group=[0], ulysses_group=[0], ring_group=[0]
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:10 [parallel_state.py:630] SP group details for rank 1: sp_group=[1], ulysses_group=[1], ring_group=[1]
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:10 [parallel_state.py:588] Building SP subgroups from explicit sp_group_ranks (sp_size=1, ulysses=1, ring=1, use_ulysses_low=True).
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:10 [parallel_state.py:630] SP group details for rank 2: sp_group=[2], ulysses_group=[2], ring_group=[2]
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:10 [wrapper.py:30] GPU profiling will stop after 1 worker steps, or when stop_profile is received.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:10 [omni_torch_profiler.py:73] Omni torch profiling enabled. Traces will be saved to: /mnt/andy/vllm-omni/results/qwen_image_rollout_regression_20260521/profiles/latest_warm_serialized_n1_tp4
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:10 [diffusion_worker.py:202] Worker 1: Initialization complete.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:10 [diffusion_worker.py:202] Worker 0: Initialization complete.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:10 [diffusion_worker.py:202] Worker 3: Initialization complete.[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m Loading weights:   0%|          | 0/729 [00:00<?, ?it/s]Loading weights:   0%|          | 0/729 [00:00<?, ?it/s]Loading weights:   0%|          | 0/729 [00:00<?, ?it/s]
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m Loading weights:   0%|          | 0/729 [00:00<?, ?it/s]
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m Loading weights:   0%|          | 1/729 [00:00<02:02,  5.95it/s]Loading weights:   0%|          | 1/729 [00:00<02:27,  4.94it/s]Loading weights:   0%|          | 1/729 [00:00<02:25,  5.00it/s]Loading weights:   0%|          | 1/729 [00:00<01:40,  7.24it/s]
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m Loading weights:   0%|          | 2/729 [00:00<02:55,  4.15it/s]Loading weights:   0%|          | 2/729 [00:00<02:56,  4.13it/s]Loading weights:   0%|          | 2/729 [00:00<02:22,  5.11it/s]
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m Loading weights:   0%|          | 2/729 [00:00<03:01,  4.00it/s]Loading weights:   1%|▏         | 10/729 [00:00<00:26, 27.53it/s]Loading weights:   1%|▏         | 10/729 [00:00<00:30, 23.38it/s]Loading weights:   2%|▏         | 16/729 [00:00<00:18, 38.42it/s]
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m Loading weights:   2%|▏         | 17/729 [00:00<00:17, 40.63it/s]
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m Loading weights:   4%|▍         | 28/729 [00:00<00:11, 58.68it/s]Loading weights:   4%|▎         | 27/729 [00:00<00:10, 66.96it/s]Loading weights:   4%|▎         | 27/729 [00:00<00:11, 60.47it/s]Loading weights:   4%|▍         | 29/729 [00:00<00:11, 59.42it/s]
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m Loading weights:   5%|▌         | 40/729 [00:00<00:09, 73.73it/s]Loading weights:   5%|▌         | 40/729 [00:00<00:08, 77.59it/s]Loading weights:   5%|▌         | 40/729 [00:00<00:08, 83.37it/s]Loading weights:   5%|▌         | 40/729 [00:00<00:09, 72.87it/s]
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m Loading weights:   7%|▋         | 53/729 [00:00<00:07, 86.58it/s]Loading weights:   7%|▋         | 53/729 [00:00<00:08, 81.22it/s]Loading weights:   7%|▋         | 53/729 [00:00<00:08, 83.77it/s]Loading weights:   7%|▋         | 53/729 [00:00<00:07, 87.79it/s]
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m Loading weights:   9%|▉         | 65/729 [00:01<00:07, 85.87it/s]Loading weights:   9%|▉         | 65/729 [00:01<00:07, 89.74it/s]Loading weights:   9%|▉         | 65/729 [00:01<00:07, 87.63it/s]Loading weights:   9%|▉         | 65/729 [00:00<00:07, 90.49it/s]
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m Loading weights:  11%|█         | 77/729 [00:01<00:06, 95.10it/s]Loading weights:  10%|█         | 75/729 [00:01<00:07, 86.63it/s]Loading weights:  10%|█         | 76/729 [00:01<00:07, 91.55it/s]Loading weights:  10%|█         | 76/729 [00:01<00:07, 89.97it/s]
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m Loading weights:  12%|█▏        | 89/729 [00:01<00:06, 100.09it/s]Loading weights:  12%|█▏        | 89/729 [00:01<00:06, 100.81it/s]Loading weights:  12%|█▏        | 89/729 [00:01<00:06, 101.49it/s]Loading weights:  12%|█▏        | 88/729 [00:01<00:06, 91.82it/s]
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m Loading weights:  14%|█▍        | 101/729 [00:01<00:05, 106.43it/s]Loading weights:  14%|█▍        | 101/729 [00:01<00:05, 105.28it/s]Loading weights:  15%|█▍        | 109/729 [00:01<00:05, 122.63it/s]Loading weights:  14%|█▍        | 101/729 [00:01<00:06, 99.56it/s]
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m Loading weights:  16%|█▌        | 114/729 [00:01<00:05, 106.29it/s]Loading weights:  16%|█▌        | 113/729 [00:01<00:05, 103.24it/s]
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m Loading weights:  16%|█▌        | 118/729 [00:01<00:08, 73.66it/s]Loading weights:  17%|█▋        | 123/729 [00:01<00:07, 78.03it/s] Loading weights:  17%|█▋        | 124/729 [00:01<00:08, 72.76it/s] Loading weights:  17%|█▋        | 125/729 [00:01<00:08, 70.04it/s] 
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m Loading weights:  19%|█▊        | 136/729 [00:01<00:06, 87.87it/s]Loading weights:  19%|█▊        | 136/729 [00:01<00:06, 91.67it/s]Loading weights:  19%|█▉        | 137/729 [00:01<00:07, 83.37it/s]Loading weights:  19%|█▉        | 138/729 [00:01<00:07, 81.61it/s]
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m Loading weights:  21%|██        | 150/729 [00:01<00:06, 95.01it/s]Loading weights:  20%|██        | 149/729 [00:01<00:06, 95.43it/s]Loading weights:  21%|██        | 150/729 [00:01<00:06, 94.01it/s]Loading weights:  21%|██▏       | 155/729 [00:01<00:05, 100.60it/s]
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m Loading weights:  24%|██▎       | 172/729 [00:02<00:04, 118.64it/s]Loading weights:  22%|██▏       | 162/729 [00:01<00:05, 100.63it/s]Loading weights:  23%|██▎       | 171/729 [00:02<00:05, 110.98it/s]
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m Loading weights:  24%|██▎       | 172/729 [00:02<00:05, 105.29it/s]Loading weights:  24%|██▍       | 177/729 [00:02<00:04, 112.33it/s]Loading weights:  26%|██▌       | 186/729 [00:02<00:04, 115.35it/s]
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m Loading weights:  26%|██▌       | 186/729 [00:02<00:04, 117.60it/s]
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m Loading weights:  25%|██▌       | 185/729 [00:02<00:05, 106.93it/s]Loading weights:  26%|██▋       | 193/729 [00:02<00:04, 124.32it/s]Loading weights:  29%|██▊       | 208/729 [00:02<00:03, 136.65it/s]
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m Loading weights:  29%|██▊       | 208/729 [00:02<00:03, 139.27it/s]Loading weights:  27%|██▋       | 200/729 [00:02<00:04, 117.48it/s]Loading weights:  29%|██▊       | 209/729 [00:02<00:04, 126.73it/s]
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m Loading weights:  31%|███       | 223/729 [00:02<00:03, 131.21it/s]Loading weights:  31%|███       | 223/729 [00:02<00:03, 133.82it/s]Loading weights:  30%|███       | 220/729 [00:02<00:03, 136.81it/s]Loading weights:  31%|███       | 226/729 [00:02<00:03, 137.42it/s]
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m Loading weights:  33%|███▎      | 244/729 [00:02<00:03, 149.00it/s]Loading weights:  33%|███▎      | 244/729 [00:02<00:03, 138.45it/s]Loading weights:  32%|███▏      | 235/729 [00:02<00:03, 129.78it/s]Loading weights:  33%|███▎      | 244/729 [00:02<00:03, 146.75it/s]
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m Loading weights:  36%|███▌      | 259/729 [00:02<00:03, 127.95it/s]Loading weights:  36%|███▌      | 260/729 [00:02<00:03, 135.74it/s]Loading weights:  36%|███▌      | 260/729 [00:02<00:03, 138.14it/s]
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m Loading weights:  35%|███▍      | 255/729 [00:02<00:03, 133.93it/s]Loading weights:  37%|███▋      | 273/729 [00:02<00:03, 126.87it/s]
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m Loading weights:  38%|███▊      | 275/729 [00:02<00:03, 132.02it/s]
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m Loading weights:  37%|███▋      | 270/729 [00:02<00:03, 136.36it/s]Loading weights:  38%|███▊      | 275/729 [00:02<00:03, 137.34it/s]
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m Loading weights:  40%|███▉      | 290/729 [00:03<00:05, 83.89it/s] Loading weights:  39%|███▉      | 284/729 [00:03<00:05, 82.51it/s] Loading weights:  39%|███▉      | 286/729 [00:03<00:05, 75.51it/s] Loading weights:  40%|███▉      | 289/729 [00:03<00:05, 79.55it/s] 
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m Loading weights:  42%|████▏     | 304/729 [00:03<00:04, 93.63it/s]Loading weights:  41%|████      | 299/729 [00:03<00:04, 94.04it/s]Loading weights:  42%|████▏     | 304/729 [00:03<00:04, 89.52it/s]Loading weights:  42%|████▏     | 304/729 [00:03<00:04, 88.33it/s]
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m Loading weights:  43%|████▎     | 316/729 [00:03<00:03, 105.23it/s]Loading weights:  43%|████▎     | 317/729 [00:03<00:04, 96.21it/s]Loading weights:  43%|████▎     | 317/729 [00:03<00:04, 94.00it/s]
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m Loading weights:  43%|████▎     | 316/729 [00:03<00:04, 89.54it/s]Loading weights:  45%|████▌     | 329/729 [00:03<00:03, 107.24it/s]Loading weights:  45%|████▌     | 330/729 [00:03<00:03, 100.72it/s]
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m Loading weights:  45%|████▌     | 330/729 [00:03<00:04, 97.97it/s]Loading weights:  45%|████▌     | 329/729 [00:03<00:04, 95.00it/s]Loading weights:  60%|█████▉    | 436/729 [00:03<00:00, 332.29it/s]Loading weights:  64%|██████▍   | 465/729 [00:03<00:00, 393.28it/s]
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m Loading weights:  65%|██████▌   | 475/729 [00:03<00:00, 402.51it/s]Loading weights:  59%|█████▉    | 431/729 [00:03<00:00, 300.06it/s]Loading weights:  76%|███████▋  | 557/729 [00:03<00:00, 551.41it/s]Loading weights:  83%|████████▎ | 605/729 [00:03<00:00, 645.62it/s]
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m Loading weights:  87%|████████▋ | 635/729 [00:03<00:00, 689.14it/s]Loading weights:  80%|████████  | 584/729 [00:03<00:00, 595.65it/s]Loading weights:  97%|█████████▋| 709/729 [00:03<00:00, 804.06it/s]Loading weights: 100%|█████████▉| 727/729 [00:03<00:00, 787.20it/s]Loading weights: 100%|██████████| 729/729 [00:03<00:00, 194.65it/s]
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m Loading weights: 100%|██████████| 729/729 [00:03<00:00, 188.76it/s]
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m Loading weights: 100%|██████████| 729/729 [00:03<00:00, 190.42it/s]
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m Loading weights: 100%|█████████▉| 728/729 [00:03<00:00, 804.86it/s]Loading weights: 100%|██████████| 729/729 [00:03<00:00, 187.88it/s]
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m Multi-thread loading shards:   0% Completed | 0/9 [00:00<?, ?it/s]
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m Multi-thread loading shards:  11% Completed | 1/9 [00:00<00:05,  1.51it/s]
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m Multi-thread loading shards:  22% Completed | 2/9 [00:01<00:04,  1.41it/s]
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m Multi-thread loading shards:  33% Completed | 3/9 [00:02<00:04,  1.38it/s]
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m Multi-thread loading shards:  44% Completed | 4/9 [00:02<00:03,  1.34it/s]
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m Multi-thread loading shards:  56% Completed | 5/9 [00:03<00:02,  1.39it/s]
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m Multi-thread loading shards:  67% Completed | 6/9 [00:04<00:02,  1.41it/s]
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m Multi-thread loading shards:  78% Completed | 7/9 [00:04<00:01,  1.43it/s]
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m Multi-thread loading shards:  89% Completed | 8/9 [00:05<00:00,  1.80it/s]
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m Multi-thread loading shards: 100% Completed | 9/9 [00:05<00:00,  1.73it/s]
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m Multi-thread loading shards: 100% Completed | 9/9 [00:05<00:00,  1.54it/s]
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m 
+
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:10 [diffusion_worker.py:202] Worker 2: Initialization complete.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:15 [selector.py:87] Resolved diffusion attention backend 'FLASH_ATTN' for role='self' via platform default
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:15 [selector.py:87] Resolved diffusion attention backend 'FLASH_ATTN' for role='self' via platform default
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:15 [selector.py:87] Resolved diffusion attention backend 'FLASH_ATTN' for role='self' via platform default
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:15 [selector.py:87] Resolved diffusion attention backend 'FLASH_ATTN' for role='self' via platform default
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:21 [diffusers_loader.py:375] Loading weights took 5.95 seconds
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:22 [diffusion_model_runner.py:144] Model loading took 33.5855 GiB and 12.798673 seconds
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:22 [diffusion_model_runner.py:149] Model runner: Model loaded successfully.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:22 [diffusion_model_runner.py:144] Model loading took 33.5855 GiB and 12.860314 seconds
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:22 [diffusion_model_runner.py:149] Model runner: Model loaded successfully.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:22 [diffusion_model_runner.py:88] Model runner: transformer compiled with torch.compile.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:22 [diffusion_model_runner.py:190] Model runner: Initialization complete.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:23 [diffusion_model_runner.py:88] Model runner: transformer compiled with torch.compile.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:23 [diffusion_model_runner.py:190] Model runner: Initialization complete.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:23 [diffusion_model_runner.py:144] Model loading took 33.5855 GiB and 13.104163 seconds
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:23 [diffusion_model_runner.py:149] Model runner: Model loaded successfully.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:23 [diffusion_model_runner.py:88] Model runner: transformer compiled with torch.compile.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:23 [diffusion_model_runner.py:190] Model runner: Initialization complete.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:23 [diffusion_model_runner.py:144] Model loading took 33.5855 GiB and 13.301145 seconds
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:23 [diffusion_model_runner.py:149] Model runner: Model loaded successfully.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:23 [diffusion_worker.py:301] Worker 0: Process-scoped GPU memory after model loading: 34.30 GiB.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:23 [diffusion_worker.py:301] Worker 1: Process-scoped GPU memory after model loading: 34.30 GiB.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:23 [manager.py:96] Initializing DiffusionLoRAManager: device=cuda:0, dtype=torch.bfloat16, max_cached_adapters=1, static_lora_path=None
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:23 [diffusion_worker.py:816] Worker 0: Scheduler loop started.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:23 [diffusion_worker.py:718] Worker 0 ready to receive requests via shared memory
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:23 [manager.py:96] Initializing DiffusionLoRAManager: device=cuda:1, dtype=torch.bfloat16, max_cached_adapters=1, static_lora_path=None
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:23 [diffusion_worker.py:816] Worker 1: Scheduler loop started.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:23 [diffusion_worker.py:718] Worker 1 ready to receive requests via shared memory
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:23 [diffusion_model_runner.py:88] Model runner: transformer compiled with torch.compile.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:23 [diffusion_model_runner.py:190] Model runner: Initialization complete.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:23 [diffusion_worker.py:301] Worker 2: Process-scoped GPU memory after model loading: 34.30 GiB.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:23 [manager.py:96] Initializing DiffusionLoRAManager: device=cuda:2, dtype=torch.bfloat16, max_cached_adapters=1, static_lora_path=None
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:23 [diffusion_worker.py:816] Worker 2: Scheduler loop started.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:23 [diffusion_worker.py:718] Worker 2 ready to receive requests via shared memory
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:23 [diffusion_worker.py:301] Worker 3: Process-scoped GPU memory after model loading: 34.30 GiB.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:23 [manager.py:96] Initializing DiffusionLoRAManager: device=cuda:3, dtype=torch.bfloat16, max_cached_adapters=1, static_lora_path=None
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:23 [diffusion_worker.py:816] Worker 3: Scheduler loop started.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:23 [diffusion_worker.py:718] Worker 3 ready to receive requests via shared memory
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:23 [diffusion_engine.py:711] dummy run to warm up the model
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:23 [kv_transfer_manager.py:1295] Rank-aware KV receive: rank 3 independently receiving (from_tp=4, to_tp=4)
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:23 [kv_transfer_manager.py:1295] Rank-aware KV receive: rank 1 independently receiving (from_tp=4, to_tp=4)
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:23 [kv_transfer_manager.py:1295] Rank-aware KV receive: rank 0 independently receiving (from_tp=4, to_tp=4)
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:23 [kv_transfer_manager.py:1295] Rank-aware KV receive: rank 2 independently receiving (from_tp=4, to_tp=4)
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:23 [inline_stage_diffusion_client.py:72] [InlineStageDiffusionClient] stage-0 [rep-0] initialized inline (batch_size=1)
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:23 [async_omni_engine.py:1088] [AsyncOmniEngine] Stage 0 replica 0 initialized (diffusion, batch_size=1, devices=0,1,2,3)
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:23 [orchestrator.py:220] [Orchestrator] Starting event loop
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:23 [async_omni_engine.py:387] [AsyncOmniEngine] Orchestrator ready with 1 stages
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:23 [omni_base.py:185] [AsyncOmni] AsyncOmniEngine initialized in 46.82 seconds
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:23 [omni_base.py:202] [AsyncOmni] Initialized with 1 stages for model /mnt/models/hub/Qwen-Image
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m WARNING 05-21 14:53:23 [api_router.py:41] Profiler with mode 'torch' is enabled in the API server. This should ONLY be used for local development!
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:24 [api_server.py:573] Detected pure diffusion mode (single diffusion stage)
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:24 [speaker_cache.py:45] Speaker cache ready (max_bytes=536870912)[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m /mnt/andy/qwen-regression/envs/v020/lib/python3.12/site-packages/torch/profiler/profiler.py:224: UserWarning: Warning: Profiler clears events at the end of each cycle.Only events from the current cycle will be reported.To keep events across cycles, set acc_events=True.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m   _warn_once(
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m /mnt/andy/qwen-regression/envs/v020/lib/python3.12/site-packages/torch/profiler/profiler.py:224: UserWarning: Warning: Profiler clears events at the end of each cycle.Only events from the current cycle will be reported.To keep events across cycles, set acc_events=True.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m   _warn_once(
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m /mnt/andy/qwen-regression/envs/v020/lib/python3.12/site-packages/torch/profiler/profiler.py:224: UserWarning: Warning: Profiler clears events at the end of each cycle.Only events from the current cycle will be reported.To keep events across cycles, set acc_events=True.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m   _warn_once(
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m /mnt/andy/qwen-regression/envs/v020/lib/python3.12/site-packages/torch/profiler/profiler.py:224: UserWarning: Warning: Profiler clears events at the end of each cycle.Only events from the current cycle will be reported.To keep events across cycles, set acc_events=True.
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m   _warn_once(
+
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:24 [serving_speech.py:211] Speaker storage: dir=/root/.cache/vllm-omni/speakers, max_speakers=1000, restored=0
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:24 [api_server.py:635] Pure diffusion API server initialized for model: /mnt/models/hub/Qwen-Image
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:25 [kv_transfer_manager.py:1295] Rank-aware KV receive: rank 0 independently receiving (from_tp=4, to_tp=4)
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:25 [kv_transfer_manager.py:1295] Rank-aware KV receive: rank 1 independently receiving (from_tp=4, to_tp=4)
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:25 [kv_transfer_manager.py:1295] Rank-aware KV receive: rank 3 independently receiving (from_tp=4, to_tp=4)
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:25 [kv_transfer_manager.py:1295] Rank-aware KV receive: rank 2 independently receiving (from_tp=4, to_tp=4)
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:42 [diffusion_engine.py:663] Starting diffusion profiling with prefix: qwen_flowgrpo_serialized_n1
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:42 [kv_transfer_manager.py:1295] Rank-aware KV receive: rank 3 independently receiving (from_tp=4, to_tp=4)
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:42 [kv_transfer_manager.py:1295] Rank-aware KV receive: rank 0 independently receiving (from_tp=4, to_tp=4)
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:42 [kv_transfer_manager.py:1295] Rank-aware KV receive: rank 1 independently receiving (from_tp=4, to_tp=4)
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:43 [kv_transfer_manager.py:1295] Rank-aware KV receive: rank 2 independently receiving (from_tp=4, to_tp=4)
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:46 [diffusion_engine.py:665] Stopping diffusion profiling...
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:49 [omni_torch_profiler.py:174] [Rank 2] Trace exported to /mnt/andy/vllm-omni/results/qwen_image_rollout_regression_20260521/profiles/latest_warm_serialized_n1_tp4/20260521-145342_qwen_flowgrpo_serialized_n1/trace_rank2.json
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:49 [omni_torch_profiler.py:174] [Rank 1] Trace exported to /mnt/andy/vllm-omni/results/qwen_image_rollout_regression_20260521/profiles/latest_warm_serialized_n1_tp4/20260521-145342_qwen_flowgrpo_serialized_n1/trace_rank1.json
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:49 [omni_torch_profiler.py:174] [Rank 3] Trace exported to /mnt/andy/vllm-omni/results/qwen_image_rollout_regression_20260521/profiles/latest_warm_serialized_n1_tp4/20260521-145342_qwen_flowgrpo_serialized_n1/trace_rank3.json
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:53:49 [omni_torch_profiler.py:174] [Rank 0] Trace exported to /mnt/andy/vllm-omni/results/qwen_image_rollout_regression_20260521/profiles/latest_warm_serialized_n1_tp4/20260521-145342_qwen_flowgrpo_serialized_n1/trace_rank0.json
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m WARNING 05-21 14:54:25 [omni_torch_profiler.py:469] [Rank 3] Failed to export Excel workbook: No module named 'openpyxl'
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m WARNING 05-21 14:54:25 [omni_torch_profiler.py:469] [Rank 1] Failed to export Excel workbook: No module named 'openpyxl'
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m WARNING 05-21 14:54:26 [omni_torch_profiler.py:469] [Rank 2] Failed to export Excel workbook: No module named 'openpyxl'
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m WARNING 05-21 14:54:26 [omni_torch_profiler.py:469] [Rank 0] Failed to export Excel workbook: No module named 'openpyxl'
+{"elapsed_ms": 3621.060576289892, "iteration": 1, "mode": "serialized", "ms_per_output": 3621.060576289892, "n": 1}
+{
+  "summary": [
+    {
+      "max_ms": 3621.060576289892,
+      "mean_ms": 3621.060576289892,
+      "mean_ms_per_output": 3621.060576289892,
+      "min_ms": 3621.060576289892,
+      "mode": "serialized",
+      "n": 1,
+      "repeats": 1
+    }
+  ],
+  "unsupported": []
+}
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m -------------------------------------------------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                                                    Name    Self CPU %      Self CPU   CPU total %     CPU total  CPU time avg     Self CUDA   Self CUDA %    CUDA total  CUDA time avg    # of Calls  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m -------------------------------------------------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                                        pipeline_forward         0.00%       0.000us         0.00%       0.000us       0.000us        3.570s       539.21%        3.570s        3.570s             1  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                                      record_param_comms         8.26%     295.113ms        10.71%     382.629ms      39.857us     238.603ms        36.04%     245.848ms      25.609us          9600  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m ncclDevKernel_AllReduce_Sum_bf16_RING_LL(ncclDevKern...         0.00%       0.000us         0.00%       0.000us       0.000us     238.603ms        36.04%     238.603ms      49.709us          4800  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                                         nccl:all_reduce         0.00%       0.000us         0.00%       0.000us       0.000us     238.603ms        36.04%     238.603ms      49.709us          4800  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                                             aten::addmm         7.79%     278.432ms         9.88%     352.925ms      28.721us     230.077ms        34.76%     230.295ms      18.741us         12288  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m          nvjet_tst_192x128_64x5_1x2_h_bz_coopB_bias_TNT         0.00%       0.000us         0.00%       0.000us       0.000us      79.274ms        11.98%      79.274ms      21.899us          3620  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                  nvjet_tst_192x8_64x8_4x1_v_bz_bias_TNT         0.00%       0.000us         0.00%       0.000us       0.000us      77.541ms        11.71%      77.541ms      32.309us          2400  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                                 _vllm_fa2_C::varlen_fwd         0.57%      20.382ms         1.35%      48.204ms      40.170us      39.511ms         5.97%      39.578ms      32.982us          1200  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m void flash::flash_fwd_kernel<Flash_fwd_kernel_traits...         0.00%       0.000us         0.00%       0.000us       0.000us      39.511ms         5.97%      39.511ms      32.926us          1200  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m          nvjet_tst_144x128_64x6_1x2_h_bz_coopA_bias_TNN         0.00%       0.000us         0.00%       0.000us       0.000us      26.348ms         3.98%      26.348ms      21.957us          1200  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                 nvjet_tst_64x24_64x16_4x2_h_bz_bias_TNT         0.00%       0.000us         0.00%       0.000us       0.000us      21.301ms         3.22%      21.301ms       8.839us          2410  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                                            _C::rms_norm         0.47%      16.889ms         1.06%      37.855ms       7.854us      20.999ms         3.17%      20.999ms       4.357us          4820  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m void vllm::rms_norm_kernel<c10::BFloat16, 8, 4>(c10:...         0.00%       0.000us         0.00%       0.000us       0.000us      20.946ms         3.16%      20.946ms       4.364us          4800  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m          nvjet_tst_64x24_64x16_4x1_v_bz_splitK_bias_TNT         0.00%       0.000us         0.00%       0.000us       0.000us      15.387ms         2.32%      15.387ms       8.501us          1810  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                                           rotary_kernel         0.00%       0.000us         0.00%       0.000us       0.000us      12.777ms         1.93%      12.777ms       2.662us          4800  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m triton_red_fused__to_copy_add_mul_native_layer_norm_...         0.30%      10.666ms         0.44%      15.611ms      13.010us      12.648ms         1.91%      12.648ms      10.540us          1200  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m triton_red_fused__to_copy_add_mul_native_layer_norm_...         0.00%       0.000us         0.00%       0.000us       0.000us      12.648ms         1.91%      12.648ms      10.540us          1200  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m triton_red_fused__to_copy_add_mul_native_layer_norm_...         0.43%      15.546ms         0.65%      23.196ms      19.330us      11.537ms         1.74%      11.550ms       9.625us          1200  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m triton_red_fused__to_copy_add_mul_native_layer_norm_...         0.00%       0.000us         0.00%       0.000us       0.000us      11.537ms         1.74%      11.537ms       9.614us          1200  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                                 aten::cudnn_convolution         0.04%       1.337ms         0.06%       2.293ms      61.977us       9.044ms         1.37%       9.044ms     244.443us            37  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m         triton_poi_fused_add_mul_split_unsqueeze_view_5         0.31%      11.092ms         0.44%      15.763ms      13.136us       8.876ms         1.34%       8.876ms       7.397us          1200  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m         triton_poi_fused_add_mul_split_unsqueeze_view_5         0.00%       0.000us         0.00%       0.000us       0.000us       8.876ms         1.34%       8.876ms       7.397us          1200  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                                         rotary_kernel_0         1.14%      40.900ms         1.40%      49.907ms      20.794us       8.750ms         1.32%       8.750ms       3.646us          2400  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                                                aten::mm         0.09%       3.349ms         0.13%       4.711ms      20.844us       7.821ms         1.18%       7.821ms      34.607us           226  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m triton_red_fused__to_copy_add_mul_native_layer_norm_...         0.66%      23.442ms         1.01%      36.112ms      15.047us       7.726ms         1.17%       7.732ms       3.222us          2400  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m triton_red_fused__to_copy_add_mul_native_layer_norm_...         0.00%       0.000us         0.00%       0.000us       0.000us       7.726ms         1.17%       7.726ms       3.219us          2400  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                            triton_poi_fused_gelu_view_1         0.22%       7.910ms         0.37%      13.181ms      10.984us       7.284ms         1.10%       7.324ms       6.104us          1200  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                            triton_poi_fused_gelu_view_1         0.00%       0.000us         0.00%       0.000us       0.000us       7.284ms         1.10%       7.284ms       6.070us          1200  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                      triton_poi_fused_all_reduce_view_0         0.32%      11.575ms         0.48%      17.103ms      14.252us       6.053ms         0.91%       6.089ms       5.074us          1200  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                      triton_poi_fused_all_reduce_view_0         0.00%       0.000us         0.00%       0.000us       0.000us       6.053ms         0.91%       6.053ms       5.044us          1200  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                                          cudaEventQuery         0.32%      11.436ms         0.32%      11.507ms       0.799us       5.744ms         0.87%       5.748ms       0.399us         14404  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m void cublasLt::splitKreduce_kernel<32, 16, int, floa...         0.00%       0.000us         0.00%       0.000us       0.000us       5.056ms         0.76%       5.056ms       2.577us          1962  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                                  triton_poi_fused_cat_4         0.50%      18.044ms         0.74%      26.357ms      10.982us       4.741ms         0.72%       4.741ms       1.975us          2400  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                                  triton_poi_fused_cat_4         0.00%       0.000us         0.00%       0.000us       0.000us       4.741ms         0.72%       4.741ms       1.975us          2400  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                            triton_poi_fused_copy_view_2         0.30%      10.546ms         0.45%      16.222ms      13.518us       4.648ms         0.70%       4.648ms       3.873us          1200  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                            triton_poi_fused_copy_view_2         0.00%       0.000us         0.00%       0.000us       0.000us       4.648ms         0.70%       4.648ms       3.873us          1200  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                     cudaThreadExchangeStreamCaptureMode         0.07%       2.480ms         0.07%       2.489ms       0.259us       4.473ms         0.68%       4.473ms       0.466us          9608  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                                         rotary_kernel_1         0.73%      26.165ms         0.96%      34.335ms      14.306us       4.027ms         0.61%       4.027ms       1.678us          2400  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                                             aten::copy_         0.10%       3.397ms         0.49%      17.601ms      24.277us       3.543ms         0.54%       3.553ms       4.900us           725  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                 nvjet_tst_128x8_64x12_2x4_h_bz_bias_TNT         0.00%       0.000us         0.00%       0.000us       0.000us       3.233ms         0.49%       3.233ms       5.389us           600  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                                               aten::mul         0.13%       4.697ms         0.22%       7.777ms       9.214us       3.106ms         0.47%       3.106ms       3.680us           844  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m sm80_xmma_fprop_implicit_gemm_bf16bf16_bf16f32_f32_n...         0.00%       0.000us         0.00%       0.000us       0.000us       2.871ms         0.43%       2.871ms     410.198us             7  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m            triton_poi_fused_cat_split_with_sizes_view_5         0.21%       7.451ms         0.33%      11.750ms       9.792us       2.704ms         0.41%       2.704ms       2.253us          1200  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m            triton_poi_fused_cat_split_with_sizes_view_5         0.00%       0.000us         0.00%       0.000us       0.000us       2.704ms         0.41%       2.704ms       2.253us          1200  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                      triton_poi_fused__to_copy_select_0         0.38%      13.504ms         0.53%      19.034ms      15.862us       2.449ms         0.37%       2.449ms       2.041us          1200  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                      triton_poi_fused__to_copy_select_0         0.00%       0.000us         0.00%       0.000us       0.000us       2.449ms         0.37%       2.449ms       2.041us          1200  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m sm90_xmma_fprop_implicit_gemm_bf16bf16_bf16f32_f32_n...         0.00%       0.000us         0.00%       0.000us       0.000us       2.365ms         0.36%       2.365ms     197.061us            12  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                               triton_poi_fused_arange_0         0.42%      14.899ms         0.71%      25.246ms      10.519us       2.317ms         0.35%       2.347ms       0.978us          2400  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                               triton_poi_fused_arange_0         0.00%       0.000us         0.00%       0.000us       0.000us       2.317ms         0.35%       2.317ms       0.966us          2400  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                            triton_poi_fused_gelu_view_3         0.20%       7.078ms         0.33%      11.694ms       9.745us       2.299ms         0.35%       2.299ms       1.916us          1200  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                            triton_poi_fused_gelu_view_3         0.00%       0.000us         0.00%       0.000us       0.000us       2.299ms         0.35%       2.299ms       1.916us          1200  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m         triton_poi_fused_add_mul_split_unsqueeze_view_4         0.38%      13.646ms         0.57%      20.474ms      17.061us       2.211ms         0.33%       2.215ms       1.846us          1200  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m         triton_poi_fused_add_mul_split_unsqueeze_view_4         0.00%       0.000us         0.00%       0.000us       0.000us       2.211ms         0.33%       2.211ms       1.843us          1200  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                      nvjet_tst_192x80_64x6_4x1_v_bz_TNT         0.00%       0.000us         0.00%       0.000us       0.000us       2.164ms         0.33%       2.164ms      38.646us            56  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m void at::native::elementwise_kernel<128, 4, at::nati...         0.00%       0.000us         0.00%       0.000us       0.000us       2.120ms         0.32%       2.120ms       5.327us           398  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m void cudnn::engines_precompiled::nchwToNhwcKernel<__...         0.00%       0.000us         0.00%       0.000us       0.000us       2.073ms         0.31%       2.073ms      31.886us            65  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                      nvjet_tst_192x56_64x6_4x1_v_bz_TNT         0.00%       0.000us         0.00%       0.000us       0.000us       2.056ms         0.31%       2.056ms      36.719us            56  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                                 triton_poi_fused_silu_0         0.37%      13.251ms         0.57%      20.251ms      16.876us       1.927ms         0.29%       1.927ms       1.606us          1200  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                                 triton_poi_fused_silu_0         0.00%       0.000us         0.00%       0.000us       0.000us       1.927ms         0.29%       1.927ms       1.606us          1200  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                            triton_poi_fused_copy_view_3         0.21%       7.426ms         0.38%      13.666ms      11.388us       1.893ms         0.29%       1.927ms       1.606us          1200  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                            triton_poi_fused_copy_view_3         0.00%       0.000us         0.00%       0.000us       0.000us       1.893ms         0.29%       1.893ms       1.577us          1200  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                      triton_poi_fused_all_reduce_view_1         0.29%      10.267ms         0.43%      15.469ms      12.891us       1.809ms         0.27%       1.809ms       1.508us          1200  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                      triton_poi_fused_all_reduce_view_1         0.00%       0.000us         0.00%       0.000us       0.000us       1.809ms         0.27%       1.809ms       1.508us          1200  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                      triton_poi_fused__to_copy_select_1         0.22%       7.839ms         0.35%      12.385ms      10.321us       1.780ms         0.27%       1.780ms       1.484us          1200  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                      triton_poi_fused__to_copy_select_1         0.00%       0.000us         0.00%       0.000us       0.000us       1.780ms         0.27%       1.780ms       1.484us          1200  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                      triton_poi_fused__to_copy_select_2         0.30%      10.701ms         0.43%      15.543ms      12.953us       1.729ms         0.26%       1.729ms       1.441us          1200  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                      triton_poi_fused__to_copy_select_2         0.00%       0.000us         0.00%       0.000us       0.000us       1.729ms         0.26%       1.729ms       1.441us          1200  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                      triton_poi_fused__to_copy_select_3         0.21%       7.628ms         0.34%      11.989ms       9.991us       1.540ms         0.23%       1.540ms       1.284us          1200  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                      triton_poi_fused__to_copy_select_3         0.00%       0.000us         0.00%       0.000us       0.000us       1.540ms         0.23%       1.540ms       1.284us          1200  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                                               aten::add         0.08%       2.947ms         0.14%       4.829ms      10.146us       1.535ms         0.23%       1.535ms       3.225us           476  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m void at::native::elementwise_kernel<128, 4, at::nati...         0.00%       0.000us         0.00%       0.000us       0.000us       1.467ms         0.22%       1.467ms       8.632us           170  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                                               aten::cat         0.08%       2.960ms         0.15%       5.200ms      12.684us       1.433ms         0.22%       1.433ms       3.496us           410  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m void at::native::unrolled_elementwise_kernel<at::nat...         0.00%       0.000us         0.00%       0.000us       0.000us       1.386ms         0.21%       1.386ms       7.832us           177  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m               nvjet_tst_64x56_64x14_4x1_v_bz_splitK_TNT         0.00%       0.000us         0.00%       0.000us       0.000us       1.351ms         0.20%       1.351ms      24.122us            56  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m               nvjet_tst_128x80_64x8_4x1_v_bz_splitK_TNT         0.00%       0.000us         0.00%       0.000us       0.000us       1.151ms         0.17%       1.151ms      41.099us            28  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                                              aten::mean         0.03%       1.131ms         0.05%       1.653ms      13.333us       1.127ms         0.17%       1.127ms       9.089us           124  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m void at::native::reduce_kernel<512, 1, at::native::R...         0.00%       0.000us         0.00%       0.000us       0.000us       1.127ms         0.17%       1.127ms       9.089us           124  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                                               aten::div         0.02%     754.450us         0.04%       1.300ms      10.746us       1.054ms         0.16%       1.054ms       8.712us           121  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m void at::native::elementwise_kernel<128, 2, at::nati...         0.00%       0.000us         0.00%       0.000us       0.000us     965.977us         0.15%     965.977us      32.199us            30  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                                              aten::add_         0.01%     187.493us         0.01%     340.205us       9.195us     930.492us         0.14%     930.492us      25.148us            37  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m void at::native::elementwise_kernel<128, 4, at::nati...         0.00%       0.000us         0.00%       0.000us       0.000us     915.358us         0.14%     915.358us      26.922us            34  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m void at::native::(anonymous namespace)::CatArrayBatc...         0.00%       0.000us         0.00%       0.000us       0.000us     877.589us         0.13%     877.589us       3.918us           224  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m void at::native::vectorized_elementwise_kernel<8, at...         0.00%       0.000us         0.00%       0.000us       0.000us     809.500us         0.12%     809.500us       4.472us           181  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m sm90_xmma_fprop_implicit_gemm_bf16bf16_bf16f32_f32_n...         0.00%       0.000us         0.00%       0.000us       0.000us     639.452us         0.10%     639.452us      63.945us            10  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                                              aten::silu         0.03%       1.038ms         0.05%       1.627ms      13.015us     631.775us         0.10%     631.775us       5.054us           125  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m void at::native::vectorized_elementwise_kernel<8, at...         0.00%       0.000us         0.00%       0.000us       0.000us     631.775us         0.10%     631.775us       5.054us           125  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m void cudnn::engines_precompiled::nhwcToNchwKernel<__...         0.00%       0.000us         0.00%       0.000us       0.000us     625.312us         0.09%     625.312us      18.949us            33  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                                aten::linalg_vector_norm         0.01%     515.776us         0.02%     764.070us      15.281us     606.050us         0.09%     606.050us      12.121us            50  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                          aten::_flash_attention_forward         0.02%     625.767us         0.05%       1.777ms      31.734us     604.991us         0.09%     604.991us      10.803us            56  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m void pytorch_flash::flash_fwd_kernel<Flash_fwd_kerne...         0.00%       0.000us         0.00%       0.000us       0.000us     604.991us         0.09%     604.991us      10.803us            56  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                                             aten::fill_         0.00%     140.131us         0.01%     307.867us       8.102us     588.382us         0.09%     588.382us      15.484us            38  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m void at::native::vectorized_elementwise_kernel<8, at...         0.00%       0.000us         0.00%       0.000us       0.000us     583.806us         0.09%     583.806us      19.460us            30  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m void at::native::reduce_kernel<128, 4, at::native::R...         0.00%       0.000us         0.00%       0.000us       0.000us     545.377us         0.08%     545.377us      18.179us            30  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m void at::native::vectorized_elementwise_kernel<8, at...         0.00%       0.000us         0.00%       0.000us       0.000us     467.069us         0.07%     467.069us       3.177us           147  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m void at::native::(anonymous namespace)::CatArrayBatc...         0.00%       0.000us         0.00%       0.000us       0.000us     413.950us         0.06%     413.950us       3.696us           112  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m void at::native::vectorized_elementwise_kernel<8, at...         0.00%       0.000us         0.00%       0.000us       0.000us     365.378us         0.06%     365.378us       5.146us            71  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m void at::native::elementwise_kernel<128, 2, at::nati...         0.00%       0.000us         0.00%       0.000us       0.000us     360.479us         0.05%     360.479us       2.690us           134  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                  nvjet_tst_64x8_64x16_4x1_v_bz_bias_TNT         0.00%       0.000us         0.00%       0.000us       0.000us     359.106us         0.05%     359.106us       8.978us            40  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m          nvjet_tst_64x16_64x16_4x2_h_bz_splitK_bias_TNT         0.00%       0.000us         0.00%       0.000us       0.000us     356.767us         0.05%     356.767us       6.371us            56  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m                          Memcpy DtoD (Device -> Device)         0.00%       0.000us         0.00%       0.000us       0.000us     351.905us         0.05%     351.905us       6.284us            56  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m -------------------------------------------------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m Self CPU time total: 3.574s
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m Self CUDA time total: 661.991ms
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m 
+[36m(BenchmarkVLLMOmniHttpServer pid=2134412)[0m INFO 05-21 14:54:43 [wrapper.py:66] Profiler stopped successfully.
