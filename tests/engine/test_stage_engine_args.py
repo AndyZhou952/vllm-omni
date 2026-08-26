@@ -431,6 +431,33 @@ def test_typed_diffusion_engine_args_use_structured_diffusion_config(tmp_path):
     assert typed_args["diffusion_attention_config"].per_role["cross"].backend == "TORCH_SDPA"
 
 
+def test_engine_args_consume_stage_diffusion_attention_shorthand(tmp_path):
+    """A stage that only sets the ``diffusion_attention_backend`` shorthand must
+    leave the adapter with a single structured representation, so
+    ``OmniDiffusionConfig.from_kwargs`` never sees both mutually exclusive
+    forms (#6644)."""
+    pipeline, deploy, model = _engine_arg_inputs(tmp_path)
+    deploy.stages[2] = replace(
+        deploy.stages[2],
+        diffusion_attention_config=None,
+        diffusion_attention_backend="TORCH_SDPA",
+    )
+    legacy_stages, omni_config = _legacy_and_typed_stages(pipeline, deploy, model)
+
+    legacy_args = build_legacy_engine_args_dict(legacy_stages[2], model)
+    typed_args = build_engine_args_dict_from_omni_stage_config(
+        omni_config.stage_by_id(2),
+        model,
+    )
+
+    for engine_args in (legacy_args, typed_args):
+        assert engine_args.get("diffusion_attention_backend") is None
+        assert isinstance(engine_args["diffusion_attention_config"], AttentionConfig)
+        assert engine_args["diffusion_attention_config"].default.backend == "TORCH_SDPA"
+        od_config = OmniDiffusionConfig.from_kwargs(**engine_args)
+        assert od_config.diffusion_attention_config.default.backend == "TORCH_SDPA"
+
+
 def test_typed_engine_args_preserve_explicit_backend_default_overrides(tmp_path):
     pipeline, deploy, model = _engine_arg_inputs(tmp_path)
     deploy.enable_prefix_caching = False

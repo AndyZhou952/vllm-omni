@@ -1015,9 +1015,22 @@ def _finalize_engine_args_dict(
     if is_diffusion:
         from vllm_omni.diffusion.data import parse_attention_config
 
-        if engine_args_dict.get("diffusion_attention_config") is not None:
+        # Consume the attention shorthand here so exactly one representation
+        # leaves the adapter regardless of which resolution path produced the
+        # stage (orchestrator kwargs injection, deploy-config CLI overlay, or
+        # headless re-resolution); from_kwargs rejects the pair as mutually
+        # exclusive when both survive (#6644).
+        attention_backend = engine_args_dict.pop("diffusion_attention_backend", None)
+        fastvideo_vsa_topk = engine_args_dict.pop("fastvideo_vsa_topk", None)
+        if (
+            engine_args_dict.get("diffusion_attention_config") is not None
+            or attention_backend is not None
+            or fastvideo_vsa_topk is not None
+        ):
             engine_args_dict["diffusion_attention_config"] = parse_attention_config(
-                engine_args_dict["diffusion_attention_config"],
+                engine_args_dict.get("diffusion_attention_config"),
+                attention_backend=attention_backend,
+                fastvideo_vsa_topk=fastvideo_vsa_topk,
             )
     else:
         resolve_worker_cls(engine_args_dict)

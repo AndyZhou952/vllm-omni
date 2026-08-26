@@ -1250,9 +1250,19 @@ class AsyncOmniEngine:
                     or kwargs.get("fastvideo_vsa_topk") is not None
                 )
                 if stage_attention_config is not None:
-                    # Keep the stage's structured config. Drop any leftover
-                    # shorthand so later from_kwargs cannot see both forms.
                     if stage_attention_backend is not None:
+                        # A shorthand equal to the global kwarg was copied onto
+                        # the stage by the deploy-config CLI overlay
+                        # (StageConfig.to_omegaconf); the stage's structured
+                        # config wins, same as the injection skip below. A
+                        # differing, stage-authored shorthand is merged instead
+                        # (raising on a genuine default-backend conflict — the
+                        # same check from_kwargs applies).
+                        if stage_attention_backend != kwargs.get("diffusion_attention_backend"):
+                            cfg.engine_args.diffusion_attention_config = parse_attention_config(
+                                stage_attention_config,
+                                attention_backend=stage_attention_backend,
+                            )
                         cfg.engine_args.diffusion_attention_backend = None
                 elif stage_attention_backend is not None:
                     # Same as _create_default_diffusion_stage_cfg: convert

@@ -1372,6 +1372,83 @@ def test_resolve_stage_configs_preserves_stage_diffusion_attention_backend(monke
     assert normalized["diffusion_attention_config"].default.backend == "TORCH_SDPA"
 
 
+def test_resolve_stage_configs_drops_kwargs_copied_shorthand_when_stage_has_config(monkeypatch):
+    """A global shorthand copied onto the stage by the deploy CLI overlay must
+    not survive next to the stage's structured config (#6644 sibling)."""
+    import vllm_omni.engine.async_omni_engine as engine_mod
+
+    engine = object.__new__(AsyncOmniEngine)
+    existing_attention = AttentionConfig(default=AttentionSpec(backend="TORCH_SDPA"))
+    stage_cfg = types.SimpleNamespace(
+        stage_type="diffusion",
+        engine_args=types.SimpleNamespace(
+            # to_omegaconf overlays the global kwarg onto the stage verbatim.
+            diffusion_attention_backend="FLASH_ATTN",
+            diffusion_attention_config=existing_attention,
+            lora_path=None,
+            lora_scale=None,
+            enable_sleep_mode=None,
+            quantization_config=None,
+        ),
+    )
+
+    monkeypatch.setattr(
+        engine_mod,
+        "load_and_resolve_stage_configs",
+        lambda *args, **kwargs: ("dummy-config", [stage_cfg], None),
+    )
+
+    _config_path, stage_configs = engine._resolve_stage_configs(
+        model="dummy-model",
+        kwargs={"diffusion_attention_backend": "FLASH_ATTN"},
+        trust_remote_code=False,
+    )
+
+    engine_args = stage_configs[0].engine_args
+    assert engine_args.diffusion_attention_backend is None
+    assert engine_args.diffusion_attention_config is existing_attention
+    normalized = normalize_omni_diffusion_kwargs(vars(engine_args))
+    assert normalized["diffusion_attention_config"].default.backend == "TORCH_SDPA"
+
+
+def test_resolve_stage_configs_merges_stage_authored_shorthand_into_stage_config(monkeypatch):
+    """A stage-authored shorthand (differing from the global kwarg) merges into
+    the stage's structured config instead of being dropped."""
+    import vllm_omni.engine.async_omni_engine as engine_mod
+
+    engine = object.__new__(AsyncOmniEngine)
+    stage_cfg = types.SimpleNamespace(
+        stage_type="diffusion",
+        engine_args=types.SimpleNamespace(
+            diffusion_attention_backend="TORCH_SDPA",
+            diffusion_attention_config=AttentionConfig(per_role={"cross": AttentionSpec(backend="FLASH_ATTN")}),
+            lora_path=None,
+            lora_scale=None,
+            enable_sleep_mode=None,
+            quantization_config=None,
+        ),
+    )
+
+    monkeypatch.setattr(
+        engine_mod,
+        "load_and_resolve_stage_configs",
+        lambda *args, **kwargs: ("dummy-config", [stage_cfg], None),
+    )
+
+    _config_path, stage_configs = engine._resolve_stage_configs(
+        model="dummy-model",
+        kwargs={"diffusion_attention_backend": "FLASH_ATTN"},
+        trust_remote_code=False,
+    )
+
+    engine_args = stage_configs[0].engine_args
+    assert engine_args.diffusion_attention_backend is None
+    assert engine_args.diffusion_attention_config.default.backend == "TORCH_SDPA"
+    assert engine_args.diffusion_attention_config.per_role["cross"].backend == "FLASH_ATTN"
+    normalized = normalize_omni_diffusion_kwargs(vars(engine_args))
+    assert normalized["diffusion_attention_config"].default.backend == "TORCH_SDPA"
+
+
 def test_resolve_stage_configs_does_not_inject_diffusion_attention_into_llm_stage(monkeypatch):
     import vllm_omni.engine.async_omni_engine as engine_mod
 
