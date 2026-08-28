@@ -1015,11 +1015,8 @@ def _finalize_engine_args_dict(
     if is_diffusion:
         from vllm_omni.diffusion.data import parse_attention_config
 
-        # Consume the attention shorthand here so exactly one representation
-        # leaves the adapter regardless of which resolution path produced the
-        # stage (orchestrator kwargs injection, deploy-config CLI overlay, or
-        # headless re-resolution); from_kwargs rejects the pair as mutually
-        # exclusive when both survive (#6644).
+        # Fold the attention shorthand into the structured config so only one
+        # representation reaches OmniDiffusionConfig.from_kwargs.
         attention_backend = engine_args_dict.pop("diffusion_attention_backend", None)
         fastvideo_vsa_topk = engine_args_dict.pop("fastvideo_vsa_topk", None)
         if (

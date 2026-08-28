@@ -1242,42 +1242,21 @@ class AsyncOmniEngine:
                 if kwargs.get("lora_backend") is not None:
                     if not hasattr(cfg.engine_args, "lora_backend") or cfg.engine_args.lora_backend is None:
                         cfg.engine_args.lora_backend = kwargs["lora_backend"]
-                stage_attention_config = getattr(cfg.engine_args, "diffusion_attention_config", None)
-                stage_attention_backend = getattr(cfg.engine_args, "diffusion_attention_backend", None)
-                kwargs_has_attention = (
+                if (
                     kwargs.get("diffusion_attention_config") is not None
                     or kwargs.get("diffusion_attention_backend") is not None
                     or kwargs.get("fastvideo_vsa_topk") is not None
-                )
-                if stage_attention_config is not None:
-                    if stage_attention_backend is not None:
-                        # A shorthand equal to the global kwarg was copied onto
-                        # the stage by the deploy-config CLI overlay
-                        # (StageConfig.to_omegaconf); the stage's structured
-                        # config wins, same as the injection skip below. A
-                        # differing, stage-authored shorthand is merged instead
-                        # (raising on a genuine default-backend conflict — the
-                        # same check from_kwargs applies).
-                        if stage_attention_backend != kwargs.get("diffusion_attention_backend"):
-                            cfg.engine_args.diffusion_attention_config = parse_attention_config(
-                                stage_attention_config,
-                                attention_backend=stage_attention_backend,
-                            )
-                        cfg.engine_args.diffusion_attention_backend = None
-                elif stage_attention_backend is not None:
-                    # Same as _create_default_diffusion_stage_cfg: convert
-                    # the stage shorthand in place and drop it.
-                    cfg.engine_args.diffusion_attention_config = parse_attention_config(
-                        None,
-                        attention_backend=stage_attention_backend,
+                ):
+                    has_stage_attention = (
+                        getattr(cfg.engine_args, "diffusion_attention_config", None) is not None
+                        or getattr(cfg.engine_args, "diffusion_attention_backend", None) is not None
                     )
-                    cfg.engine_args.diffusion_attention_backend = None
-                elif kwargs_has_attention:
-                    cfg.engine_args.diffusion_attention_config = parse_attention_config(
-                        kwargs.get("diffusion_attention_config"),
-                        attention_backend=kwargs.get("diffusion_attention_backend"),
-                        fastvideo_vsa_topk=kwargs.get("fastvideo_vsa_topk"),
-                    )
+                    if not has_stage_attention:
+                        cfg.engine_args.diffusion_attention_config = parse_attention_config(
+                            kwargs.get("diffusion_attention_config"),
+                            attention_backend=kwargs.get("diffusion_attention_backend"),
+                            fastvideo_vsa_topk=kwargs.get("fastvideo_vsa_topk"),
+                        )
                 quantization_config = kwargs.get("diffusion_quantization_config") or kwargs.get("quantization_config")
                 if quantization_config is not None:
                     if (

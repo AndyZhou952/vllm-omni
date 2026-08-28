@@ -432,10 +432,7 @@ def test_typed_diffusion_engine_args_use_structured_diffusion_config(tmp_path):
 
 
 def test_engine_args_consume_stage_diffusion_attention_shorthand(tmp_path):
-    """A stage that only sets the ``diffusion_attention_backend`` shorthand must
-    leave the adapter with a single structured representation, so
-    ``OmniDiffusionConfig.from_kwargs`` never sees both mutually exclusive
-    forms (#6644)."""
+    """A stage-level ``diffusion_attention_backend`` shorthand is folded into the structured config."""
     pipeline, deploy, model = _engine_arg_inputs(tmp_path)
     deploy.stages[2] = replace(
         deploy.stages[2],
@@ -454,6 +451,39 @@ def test_engine_args_consume_stage_diffusion_attention_shorthand(tmp_path):
         assert engine_args.get("diffusion_attention_backend") is None
         assert isinstance(engine_args["diffusion_attention_config"], AttentionConfig)
         assert engine_args["diffusion_attention_config"].default.backend == "TORCH_SDPA"
+        od_config = OmniDiffusionConfig.from_kwargs(**engine_args)
+        assert od_config.diffusion_attention_config.default.backend == "TORCH_SDPA"
+
+
+@pytest.mark.parametrize(
+    "yaml_attention_config",
+    [
+        {"default": {"backend": "FLASH_ATTN"}, "per_role": {"cross": {"backend": "SAGE_ATTN"}}},
+        {"per_role": {"cross": {"backend": "SAGE_ATTN"}}},
+    ],
+    ids=["yaml-default", "yaml-per-role-only"],
+)
+def test_engine_args_apply_cli_attention_shorthand_over_yaml_config(tmp_path, yaml_attention_config):
+    pipeline, deploy, model = _engine_arg_inputs(tmp_path)
+    deploy.stages[2] = replace(deploy.stages[2], diffusion_attention_config=yaml_attention_config)
+    legacy_stages, omni_config = _legacy_and_typed_stages(
+        pipeline,
+        deploy,
+        model,
+        cli_overrides={"stage_2_diffusion_attention_backend": "TORCH_SDPA"},
+    )
+
+    legacy_args = build_legacy_engine_args_dict(legacy_stages[2], model)
+    typed_args = build_engine_args_dict_from_omni_stage_config(
+        omni_config.stage_by_id(2),
+        model,
+    )
+
+    for engine_args in (legacy_args, typed_args):
+        assert engine_args.get("diffusion_attention_backend") is None
+        attention_config = engine_args["diffusion_attention_config"]
+        assert attention_config.default.backend == "TORCH_SDPA"
+        assert attention_config.per_role["cross"].backend == "SAGE_ATTN"
         od_config = OmniDiffusionConfig.from_kwargs(**engine_args)
         assert od_config.diffusion_attention_config.default.backend == "TORCH_SDPA"
 

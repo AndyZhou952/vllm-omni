@@ -46,6 +46,7 @@ from vllm_omni.config.stage_config import (
     _select_processor_funcs,
     build_stage_runtime_overrides,
     load_deploy_config,
+    reconcile_diffusion_attention_overrides,
 )
 from vllm_omni.diffusion.diffusion_kv.config import DiffusionKVCacheMode
 
@@ -1202,6 +1203,9 @@ def _stage_engine_values(
     if topology.omni_kv_config:
         engine["omni_kv_config"] = _copy_value(topology.omni_kv_config)
     if stage_cli_overrides:
+        if topology.execution_type == StageExecutionType.DIFFUSION:
+            # Mirror StageConfig.to_omegaconf so both projections resolve alike.
+            reconcile_diffusion_attention_overrides(engine, stage_cli_overrides)
         engine.update(_copy_value(stage_cli_overrides))
     _validate_stage_engine_override_ownership(
         topology.stage_id,
