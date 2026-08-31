@@ -7,7 +7,7 @@ from __future__ import annotations
 import functools
 import re
 import warnings
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import asdict, dataclass, field, fields
 from enum import Enum
 from pathlib import Path
@@ -159,6 +159,28 @@ def _apply_diffusion_parallel_runtime_overrides(
 
     if parallel_config_dict is not None:
         engine_args["parallel_config"] = parallel_config_dict
+
+
+def reconcile_diffusion_attention_overrides(
+    engine_args: dict[str, Any],
+    runtime_overrides: Mapping[str, Any],
+) -> None:
+    """Apply CLI precedence across the two diffusion attention representations.
+
+    ``diffusion_attention_backend`` and ``diffusion_attention_config.default``
+    express the same setting and are rejected downstream when both are set, so
+    a CLI value in one form replaces the YAML value in the other.
+    """
+    if runtime_overrides.get("diffusion_attention_backend") is not None:
+        yaml_config = engine_args.get("diffusion_attention_config")
+        if isinstance(yaml_config, Mapping) and yaml_config.get("default") is not None:
+            remaining = {k: v for k, v in yaml_config.items() if k != "default"}
+            if remaining:
+                engine_args["diffusion_attention_config"] = remaining
+            else:
+                engine_args.pop("diffusion_attention_config")
+    if runtime_overrides.get("diffusion_attention_config") is not None:
+        engine_args.pop("diffusion_attention_backend", None)
 
 
 class StageType(str, Enum):
@@ -327,6 +349,11 @@ class PipelineConfig:
                     errors.append(f"Stage {stage.stage_id} references itself")
         if not any(not s.input_sources for s in self.stages):
             errors.append("No entry point (stage with empty input_sources)")
+        # Request completion and client-visible output are both driven by stages
+        # that declare ``final_output`` (see ``Orchestrator._route_output``). A
+        # pipeline without one can never emit a result, so every request hangs.
+        if not any(s.final_output for s in self.stages):
+            errors.append("No terminal stage (stage with final_output=True)")
         return errors
 
 
@@ -389,6 +416,7 @@ class StageDeployConfig:
     # Diffusion parallel_config deploy/runtime override fields.
     ulysses_degree: int | None = None
     ulysses_mode: str | None = None
+    ulysses_a2a_permute: bool | None = None
     ring_degree: int | None = None
     allgather_degree: int | None = None
     sequence_parallel_size: int | None = None
@@ -1075,6 +1103,7 @@ class StageConfig:
 
         if StageType(self.stage_type) == StageType.DIFFUSION:
             _apply_diffusion_parallel_runtime_overrides(engine_args, runtime_overrides)
+            reconcile_diffusion_attention_overrides(engine_args, runtime_overrides)
 
         # CLI overrides take precedence over YAML defaults
         for key, value in runtime_overrides.items():

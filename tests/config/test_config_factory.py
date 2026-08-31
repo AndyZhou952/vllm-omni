@@ -650,7 +650,7 @@ class TestPipelineConfigNew:
             model_arch="A",
             stages=(
                 StagePipelineConfig(stage_id=0, model_stage="a"),
-                StagePipelineConfig(stage_id=1, model_stage="b", input_sources=(0,)),
+                StagePipelineConfig(stage_id=1, model_stage="b", input_sources=(0,), final_output=True),
             ),
         )
         assert p.validate() == []
@@ -658,6 +658,30 @@ class TestPipelineConfigNew:
     def test_validate_no_stages(self):
         p = PipelineConfig(model_type="t", model_arch="A")
         assert any("no stages" in e.lower() for e in p.validate())
+
+    def test_validate_no_terminal_stage(self):
+        """A pipeline with no ``final_output`` stage can never emit a result."""
+        p = PipelineConfig(
+            model_type="t",
+            model_arch="A",
+            stages=(
+                StagePipelineConfig(stage_id=0, model_stage="a"),
+                StagePipelineConfig(stage_id=1, model_stage="b", input_sources=(0,)),
+            ),
+        )
+        assert any("no terminal stage" in e.lower() for e in p.validate())
+
+    def test_validate_terminal_stage_need_not_be_last(self):
+        """The check is cycle-agnostic: any stage may carry ``final_output``."""
+        p = PipelineConfig(
+            model_type="t",
+            model_arch="A",
+            stages=(
+                StagePipelineConfig(stage_id=0, model_stage="a", final_output=True),
+                StagePipelineConfig(stage_id=1, model_stage="b", input_sources=(0,)),
+            ),
+        )
+        assert p.validate() == []
 
 
 class TestPipelineRegistration:
@@ -1159,7 +1183,7 @@ class TestDeployConfigLoading:
         stages = merge_pipeline_deploy(pipeline, deploy)
 
         assert deploy.session_mode == "duplex"
-        assert deploy.active_stream_window == 1
+        assert deploy.active_stream_window == max_sessions
         assert deploy.duplex_session.max_sessions == max_sessions
         assert [stage.session_mode for stage in stages] == ["duplex", "duplex", "duplex"]
         assert [stage.to_omegaconf().session_mode for stage in stages] == ["duplex", "duplex", "duplex"]
@@ -2399,6 +2423,20 @@ class TestPlatformOverrides:
         assert rocm.stages[0].enforce_eager is None
         assert rocm.stages[1].enforce_eager is True
 
+    def test_higgs_audio_v3_rocm_uses_triton_attention(self):
+        deploy_path = Path(get_deploy_config_path("higgs_multimodal_qwen3.yaml"))
+
+        base = load_deploy_config(deploy_path)
+        assert base.stages[0].engine_extras["attention_backend"] == "FLASHINFER"
+
+        rocm = _apply_platform_overrides(base, platform="rocm")
+        assert rocm.stages[0].engine_extras["attention_backend"] == "TRITON_ATTN"
+
+        pipeline = resolve_pipeline_config("higgs_multimodal_qwen3")
+        assert isinstance(pipeline, PipelineConfig)
+        stages = merge_pipeline_deploy(pipeline, rocm)
+        assert stages[0].yaml_engine_args["attention_backend"] == "TRITON_ATTN"
+
     def test_qwen3_omni_cuda_uses_thinker_rotary_custom_op(self):
         deploy_path = Path(get_deploy_config_path("qwen3_omni_moe.yaml"))
         pipeline = resolve_pipeline_config(
@@ -2785,6 +2823,54 @@ stages:
         assert omega_config.engine_args.max_num_batched_tokens == 2048
         assert omega_config.engine_args.max_model_len == 8192
         assert omega_config.engine_args.enforce_eager is True
+
+    def test_cli_attention_shorthand_replaces_yaml_structured_default(self):
+        stage = StageConfig(
+            stage_id=0,
+            model_stage="dit",
+            stage_type=StageType.DIFFUSION,
+            yaml_engine_args={
+                "diffusion_attention_config": {
+                    "default": {"backend": "FLASH_ATTN"},
+                    "per_role": {"cross": {"backend": "TORCH_SDPA"}},
+                },
+            },
+            runtime_overrides={"diffusion_attention_backend": "SAGE_ATTN"},
+        )
+
+        engine_args = stage.to_omegaconf().engine_args
+
+        assert engine_args.diffusion_attention_backend == "SAGE_ATTN"
+        assert "default" not in engine_args.diffusion_attention_config
+        assert engine_args.diffusion_attention_config.per_role.cross.backend == "TORCH_SDPA"
+
+    def test_cli_attention_shorthand_keeps_yaml_per_role_only_config(self):
+        stage = StageConfig(
+            stage_id=0,
+            model_stage="dit",
+            stage_type=StageType.DIFFUSION,
+            yaml_engine_args={"diffusion_attention_config": {"per_role": {"cross": {"backend": "TORCH_SDPA"}}}},
+            runtime_overrides={"diffusion_attention_backend": "SAGE_ATTN"},
+        )
+
+        engine_args = stage.to_omegaconf().engine_args
+
+        assert engine_args.diffusion_attention_backend == "SAGE_ATTN"
+        assert engine_args.diffusion_attention_config == {"per_role": {"cross": {"backend": "TORCH_SDPA"}}}
+
+    def test_cli_attention_config_replaces_yaml_shorthand(self):
+        stage = StageConfig(
+            stage_id=0,
+            model_stage="dit",
+            stage_type=StageType.DIFFUSION,
+            yaml_engine_args={"diffusion_attention_backend": "TORCH_SDPA"},
+            runtime_overrides={"diffusion_attention_config": {"default": {"backend": "SAGE_ATTN"}}},
+        )
+
+        engine_args = stage.to_omegaconf().engine_args
+
+        assert "diffusion_attention_backend" not in engine_args
+        assert engine_args.diffusion_attention_config.default.backend == "SAGE_ATTN"
 
 
 class TestSentinelDefaultPrecedence:
